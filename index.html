@@ -285,25 +285,15 @@
           const studentName = row['اسم الطالب']||row['الطالب']||'';
           if (!studentName || String(studentName).trim() === '') return; // تجاهل الصف بدون اسم طالب
           if (String(studentName).trim().includes('معلم المادة')) return; // تجاهل الصف الذي يحمل معلم المادة
-          // الحوار: ابحث عن 4 أعمدة للحوار
-          let dialogSum = 0;
-          for(let i=1;i<=4;i++){
-            let val = row[`الحوار ${i}`] ?? row[`الحوار${i}`] ?? row[`الحوار_${i}`] ?? 0;
-            dialogSum += parseFloat(val)||0;
-          }
-          // الأسئلة القصيرة: 4 أعمدة
-          let shortqSum = 0;
-          for(let i=1;i<=4;i++){
-            let val = row[`الأسئلة القصيرة ${i}`] ?? row[`الأسئلة القصيرة${i}`] ?? row[`الأسئلة القصيرة_${i}`] ?? 0;
-            shortqSum += parseFloat(val)||0;
-          }
-          // العملية: 3 أعمدة كل قسم من 15 درجة
-          let practicalSum = 0;
-          for(let i=1;i<=3;i++){
-            let val = row[`العملية ${i}`] ?? row[`العملية${i}`] ?? row[`العملية_${i}`] ?? 0;
-            practicalSum += parseFloat(val)||0;
-          }
-          // مجموع العملية النهائي من 45
+          // جمع أول 4 أعمدة للحوار
+          const dialogKeys = Object.keys(row).filter(key => key && key.toString().includes('حوار')).slice(0,4);
+          let dialogSum = dialogKeys.reduce((sum, key) => sum + (parseFloat(row[key])||0), 0);
+          // جمع أول 4 أعمدة للأسئلة القصيرة
+          const shortqKeys = Object.keys(row).filter(key => key && key.toString().includes('أسئلة قصيرة')).slice(0,4);
+          let shortqSum = shortqKeys.reduce((sum, key) => sum + (parseFloat(row[key])||0), 0);
+          // جمع أول 3 أعمدة للأنشطة العملية
+          const practicalKeys = Object.keys(row).filter(key => key && key.toString().includes('عملية')).slice(0,3);
+          let practicalSum = practicalKeys.reduce((sum, key) => sum + (parseFloat(row[key])||0), 0);
           // المشروع: عمود واحد
           let projectVal = row['المشروع'] ?? row['درجة المشروع'] ?? row['المشروع النهائي'] ?? 0;
           projectVal = parseFloat(projectVal)||0;
