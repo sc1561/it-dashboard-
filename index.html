@@ -195,6 +195,7 @@ function getSheetColumns(sheetName) {
   return null;
 }
 
+
 function loadSelectedSheets() {
   const selectedWorkbook = workbooks[parseInt(classSelect.value)];
   const selectedSheets = Array.from(sheetSelect.selectedOptions).map(opt => opt.value);
@@ -205,19 +206,14 @@ function loadSelectedSheets() {
     const sheet = selectedWorkbook.workbook.Sheets[sheetName];
     const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     const headers = json[0] || [];
-    let requiredColumns = getSheetColumns(sheetName);
-    // إذا لم توجد مطابقة، عرض كل الأعمدة
-    if (!requiredColumns) requiredColumns = headers;
     const rows = json.slice(1).map(row => {
       let entry = {};
-      requiredColumns.forEach((header, idx) => {
-        // ابحث عن العمود في headers الأصلية
-        const colIdx = headers.indexOf(header);
-        entry[header] = colIdx !== -1 ? row[colIdx] : "";
+      headers.forEach((header, idx) => {
+        entry[header] = row[idx];
       });
       return entry;
     }).filter(entry => Object.values(entry).some(v => v !== undefined && v !== null && v !== ""));
-    outputs.push({ sheetName, headers: requiredColumns, rows });
+    outputs.push({ sheetName, headers, rows });
   });
 
   renderSheetsTabs(outputs);
@@ -242,7 +238,8 @@ function renderAnnualTable(data) {
 
 
 
-// عرض كل ورقة في تبويب منفصل مع جدول خاص بها وتنسيق احترافي
+
+// عرض كل ورقة في تبويب منفصل مع جدول خاص بها وتنسيق احترافي بدون أزرار إضافية
 function renderSheetsTabs(outputs) {
   const container = document.getElementById('reportTable');
   container.innerHTML = '';
@@ -267,23 +264,6 @@ function renderSheetsTabs(outputs) {
     sheetTitle.style = 'font-size:22px; color:#00796b; margin-bottom:10px; font-weight:bold;';
     sheetTitle.textContent = out.sheetName;
     tabContent.appendChild(sheetTitle);
-
-    // شريط الأدوات
-    const toolbar = document.createElement('div');
-    toolbar.className = 'toolbar';
-    const csvBtn = document.createElement('button');
-    csvBtn.textContent = 'تنزيل CSV';
-    csvBtn.onclick = () => exportCSV(out.rows, out.headers, out.sheetName);
-    toolbar.appendChild(csvBtn);
-    const jsonBtn = document.createElement('button');
-    jsonBtn.textContent = 'تنزيل JSON';
-    jsonBtn.onclick = () => exportJSON(out.rows, out.sheetName);
-    toolbar.appendChild(jsonBtn);
-    const copyBtn = document.createElement('button');
-    copyBtn.textContent = 'نسخ إلى الحافظة';
-    copyBtn.onclick = () => copyTableToClipboard(tabContent.querySelector('table'));
-    toolbar.appendChild(copyBtn);
-    tabContent.appendChild(toolbar);
 
     // الجدول
     const tableWrap = document.createElement('div');
