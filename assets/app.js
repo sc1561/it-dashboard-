@@ -1,20 +1,16 @@
 /* =========================================================
-   لوحة تقارير ودرجات — للعرض فقط (Read-Only)
-   - لا يوجد خادم. كل المعالجة تتم داخل المتصفح.
-   - SheetJS (xlsx) لقراءة/كتابة Excel + CSV.
-   - تصدير: PDF (jsPDF+AutoTable) / Excel / طباعة.
-   - تدعيم ملفات: .xlsx / .xlsm / .xls / .csv
+   لوحة تقارير ودرجات — متعدد القوالب (Read-Only)
    ========================================================= */
-
 (() => {
-  // عناصر DOM
   const fileInput     = document.getElementById('fileInput');
   const dropzone      = document.getElementById('dropzone');
   const loader        = document.getElementById('loader');
 
+  const stageFilter   = document.getElementById('stageFilter');
   const gradeFilter   = document.getElementById('gradeFilter');
   const sectionFilter = document.getElementById('sectionFilter');
   const sheetFilter   = document.getElementById('sheetFilter');
+  const sourceFilter  = document.getElementById('sourceFilter');
   const searchInput   = document.getElementById('searchInput');
 
   const exportPdfBtn  = document.getElementById('exportPdfBtn');
@@ -28,172 +24,206 @@
   const stats         = document.getElementById('stats');
   const readmeLink    = document.getElementById('readmeLink');
 
-  // حالة التطبيق (in-memory فقط)
-  let workbook = null;
-  let sheetNames = [];
-  let rawDataBySheet = {};  // {sheetName: Array<Object>}
-  let currentSheet = '';
-  let displayedData = [];   // بيانات الجدول الحالية بعد الفلترة/الفرز/البحث
-  let originalData = [];    // نسخة من بيانات الورقة المختارة قبل الفلترة
+  let aggregated = [];
+  let displayed  = [];
+  let allSheets  = new Set();
+  let allSources = new Set();
 
-  // مفاتيح أعمدة متوقعة (للفلاتر والبحث)
-  const COL_GRADE   = 'الصف';
-  const COL_SECTION = 'الشعبة';
-  const COL_NAME    = 'الاسم';
+  const COLS = { grade:'grade', section:'section', name:'name', score:'score' };
 
-  // أدوات مساعدة
+  const TEMPLATES = [
+    {
+      id: 'stage_5_6',
+      label: 'الصفوف 5-6',
+      match: (fileName, sheetName) =>
+        /5-6|5_6|الصفوف\s*5|الصفوف\s*6/i.test(fileName) || /5|6/.test(sheetName),
+      map: { 'الصف':'grade', 'الشعبة':'section', 'الاسم':'name', 'الدرجة':'score' },
+      aliases: { 'الدرجة النهائية':'الدرجة', 'اسم الطالب':'الاسم' }
+    },
+    {
+      id: 'stage_7_10',
+      label: 'الصفوف 7-10',
+      match: (fileName, sheetName) =>
+        /7-10|7_10|الصفوف\s*7|الصفوف\s*8|الصفوف\s*9|الصفوف\s*10/i.test(fileName) || /7|8|9|10/.test(sheetName),
+      map: { 'الصف':'grade', 'الشعبة':'section', 'الاسم':'name', 'الدرجة':'score' },
+      aliases: { 'المحصلة':'الدرجة', 'الطالب':'الاسم' }
+    },
+    {
+      id: 'stage_11_12',
+      label: 'الصفان 11-12',
+      match: (fileName, sheetName) =>
+        /11|12|الصفين\s*11|الصفين\s*12/i.test(fileName) || /11|12/.test(sheetName),
+      map: { 'الصف':'grade', 'الشعبة':'section', 'الاسم':'name', 'الدرجة':'score' },
+      aliases: { 'المجموع':'الدرجة', 'اسم المتعلم':'الاسم' }
+    },
+    {
+      id: 'primary_cycle',
+      label: 'الحلقة الأولى',
+      match: (fileName, sheetName) =>
+        /الحلقة\s*الأولى|الاولى|الأولى/i.test(fileName) || /الحلقة/.test(sheetName),
+      map: { 'الصف':'grade', 'الشعبة':'section', 'الاسم':'name', 'الدرجة':'score' },
+      aliases: { 'علامة':'الدرجة' }
+    }
+  ];
+
   const showLoader = (v=true) => loader.classList.toggle('show', v);
-  const text = (v) => (v===undefined || v===null) ? '' : String(v);
+  const s = (v) => (v===undefined || v===null) ? '' : String(v);
 
-  /* =========================================================
-     قراءة ملف Excel/CSV داخل المتصفح (Read-Only)
-     ========================================================= */
-  async function handleFile(file){
-    if(!file) return;
+  function findTemplate(fileName, sheetName, headers){
+    const viaName = TEMPLATES.find(t => t.match(fileName, sheetName));
+    if (viaName) return viaName;
+    const H = new Set(headers.map(h => s(h).trim()));
+    const guesses = TEMPLATES.filter(t => Object.keys(t.map).some(k => H.has(k)));
+    return guesses[0] || null;
+  }
 
+  function normalizeHeaders(headers, template){
+    const out = headers.map(h => s(h));
+    if (!template?.aliases) return out;
+    return out.map(h => (template.aliases[h] ? template.aliases[h] : h));
+  }
+
+  function mapRowToCanonical(row, template){
+    const canonical = {};
+    Object.keys(row).forEach(k => { canonical[k] = row[k]; });
+    if (template?.map){
+      Object.entries(template.map).forEach(([src, dst]) => {
+        if (row.hasOwnProperty(src)) canonical[dst] = row[src];
+      });
+    }
+    canonical[COLS.grade]   = canonical[COLS.grade]   ?? row['الصف']    ?? row['صف']    ?? '';
+    canonical[COLS.section] = canonical[COLS.section] ?? row['الشعبة']  ?? row['شعبة']  ?? '';
+    canonical[COLS.name]    = canonical[COLS.name]    ?? row['الاسم']   ?? row['اسم']   ?? row['اسم الطالب'] ?? '';
+    canonical[COLS.score]   = canonical[COLS.score]   ?? row['الدرجة']  ?? row['علامة'] ?? row['المجموع'] ?? row['المحصلة'] ?? '';
+    return canonical;
+  }
+
+  async function parseFile(file){
+    const buf = await file.arrayBuffer();
+    let wb;
+    try{ wb = XLSX.read(buf, { type:'array', cellDates:true, raw:false, WTF:true }); }
+    catch(e){
+      const txt = await file.text();
+      wb = XLSX.read(txt, { type:'string' });
+    }
+    const fileName = file.name;
+    const result = [];
+    (wb.SheetNames || []).forEach(sheetName => {
+      const ws = wb.Sheets[sheetName];
+      if (!ws) return;
+      let rows = XLSX.utils.sheet_to_json(ws, { defval:'', raw:false, blankrows:false });
+      if (!rows.length) return;
+      const headers = Object.keys(rows[0]);
+      const template = findTemplate(fileName, sheetName, headers);
+      const normHeaders = normalizeHeaders(headers, template);
+      rows = rows.map(r => {
+        const o = {};
+        normHeaders.forEach((h, i) => { o[h] = r[headers[i]]; });
+        return o;
+      });
+      const unified = rows.map(r => {
+        const u = mapRowToCanonical(r, template);
+        u.__sheet  = sheetName;
+        u.__source = fileName;
+        u.__template = template ? template.id : 'unknown';
+        return u;
+      });
+      result.push(...unified);
+      allSheets.add(sheetName);
+      allSources.add(fileName);
+    });
+    return result;
+  }
+
+  async function handleFiles(fileList){
+    if (!fileList?.length) return;
     showLoader(true);
-
-    // فحص الامتداد
-    const name = file.name || '';
-    const lower = name.toLowerCase();
-    const isCSV  = lower.endsWith('.csv');
-    const isXLSX = lower.endsWith('.xlsx') || lower.endsWith('.xlsm');
-    const isXLS  = lower.endsWith('.xls');
-
-    try {
-      const buf = await file.arrayBuffer();
-
-      // قراءة أساسية
-      workbook = XLSX.read(buf, {
-        type: 'array',
-        cellDates: true,
-        raw: false,
-        WTF: true   // يعطي رسائل تشخيصية في الكونسول إذا الملف معطوب
-      });
-
-      // معالجة خاصة لـ CSV عند الحاجة
-      if (isCSV && (!workbook.SheetNames || workbook.SheetNames.length === 0)) {
-        const textCsv = await file.text();
-        workbook = XLSX.read(textCsv, { type: 'string' });
+    try{
+      aggregated = [];
+      allSheets.clear(); allSources.clear();
+      for (const file of fileList){
+        const part = await parseFile(file);
+        aggregated.push(...part);
       }
-
-      sheetNames = workbook.SheetNames || [];
-      if (!sheetNames.length) {
-        throw new Error('لم يتم العثور على أوراق عمل داخل الملف.');
-      }
-
-      // تحويل أوراق العمل إلى JSON
-      rawDataBySheet = {};
-      sheetNames.forEach(sName => {
-        const ws = workbook.Sheets[sName];
-        const json = XLSX.utils.sheet_to_json(ws, {
-          defval: '',
-          raw: false,
-          blankrows: false
-        });
-        rawDataBySheet[sName] = json;
-      });
-
-      const firstSheet = sheetNames[0];
-      if (!rawDataBySheet[firstSheet]?.length) {
-        throw new Error('تم فتح الملف بنجاح لكن لم يتم العثور على صفوف بيانات. تأكد أن الصف الأول يحوي عناوين أعمدة واضحة.');
-      }
-
-      // ملء قائمة الأوراق واختيار الأولى
-      fillSheetFilter(sheetNames);
-      currentSheet = firstSheet;
-      originalData = rawDataBySheet[currentSheet] || [];
-      updateFiltersFromData(originalData);
-      applyFiltersAndRender();
-
-      stats.textContent = `تم تحميل الملف: ${name} — الأوراق: ${sheetNames.length}`;
-    } catch (err) {
-      console.error(err);
-
-      // رسائل مساعدة حسب الحالة
-      let hint = 'تعذر قراءة الملف. تأكد أن الصيغة صحيحة وأن الملف غير محمي بكلمة مرور.';
-      if (isXLS) {
-        hint += '\nملاحظة: ملفات ‎.xls‎ القديمة قد لا تُقرأ دائمًا. افتحها في Excel ثم احفظها كـ ‎.xlsx‎ وأعد الرفع.';
-      }
-      if (!isCSV && !isXLS && !isXLSX) {
-        hint += '\nالامتدادات المدعومة: ‎.xlsx / .xlsm / .xls / .csv';
-      }
-      alert(hint);
-    } finally {
+  updateFiltersByStage();
+  applyFiltersAndRender();
+      stats.textContent = `تم تحميل ${fileList.length} ملف(ات) — السجلات: ${aggregated.length}`;
+    }catch(e){
+      console.error(e);
+      alert('تعذر قراءة بعض الملفات. تأكد من الصيغة أو احفظ كـ .xlsx ثم أعد الرفع.');
+    }finally{
       showLoader(false);
     }
   }
 
-  // تعبئة قائمة الأوراق
-  function fillSheetFilter(names){
-    sheetFilter.innerHTML = '<option value="">(أول ورقة)</option>';
-    names.forEach(n => {
-      const opt = document.createElement('option');
-      opt.value = n; opt.textContent = n;
-      sheetFilter.appendChild(opt);
-    });
-  }
-
-  // استنتاج خيارات الفلاتر (الصف/الشعبة)
-  function updateFiltersFromData(rows){
-    const grades = new Set();
-    const sections = new Set();
-
-    rows.forEach(r => {
-      if (r[COL_GRADE]) grades.add(text(r[COL_GRADE]));
-      if (r[COL_SECTION]) sections.add(text(r[COL_SECTION]));
-    });
-
-    fillSelect(gradeFilter, [...grades]);
-    fillSelect(sectionFilter, [...sections]);
+  function uniqueValues(rows, key){
+    const vals = new Set();
+    rows.forEach(r => { if (s(r[key])) vals.add(s(r[key])); });
+    return Array.from(vals).filter(Boolean).sort((a,b)=> (''+a).localeCompare((''+b),'ar', {numeric:true}));
   }
 
   function fillSelect(selectEl, options){
     const current = selectEl.value || '';
     selectEl.innerHTML = '<option value="">الكل</option>';
-    options.sort((a,b)=> (''+a).localeCompare((''+b),'ar')).forEach(v=>{
+    options.forEach(v=>{
       const opt = document.createElement('option');
       opt.value = v; opt.textContent = v;
       selectEl.appendChild(opt);
     });
-    if ([...selectEl.options].some(o=>o.value===current)) {
-      selectEl.value = current;
-    }
+    if ([...selectEl.options].some(o=>o.value===current)) selectEl.value = current;
   }
 
-  /* =========================================================
-     فلترة + بحث + عرض
-     ========================================================= */
   function applyFiltersAndRender(){
-    const g = gradeFilter.value.trim();
-    const s = sectionFilter.value.trim();
-    const q = searchInput.value.trim();
+  const stage = stageFilter.value.trim();
+  const g = gradeFilter.value.trim();
+  const se = sectionFilter.value.trim();
+  const sh = sheetFilter.value.trim();
+  const so = sourceFilter.value.trim();
+  const q = searchInput.value.trim().toLowerCase();
 
-    const byGrade   = g ? (r => text(r[COL_GRADE]) === g) : (()=>true);
-    const bySection = s ? (r => text(r[COL_SECTION]) === s) : (()=>true);
-    const byQuery   = q ? (r => text(r[COL_NAME]).toLowerCase().includes(q.toLowerCase())) : (()=>true);
+  const byStage = stage ? (r => r.__template === stage) : ()=>true;
+  const byG  = g  ? (r => s(r.grade)   === g)  : ()=>true;
+  const bySe = se ? (r => s(r.section) === se) : ()=>true;
+  const bySh = sh ? (r => s(r.__sheet) === sh) : ()=>true;
+  const bySo = so ? (r => s(r.__source)=== so) : ()=>true;
+  const byQ  = q  ? (r => s(r.name).toLowerCase().includes(q)) : ()=>true;
 
-    displayedData = (originalData || []).filter(r => byGrade(r) && bySection(r) && byQuery(r));
+  displayed = aggregated.filter(r => byStage(r) && byG(r) && bySe(r) && bySh(r) && bySo(r) && byQ(r));
+  renderTable(displayed);
+  const filters = [stage&&`المرحلة=${stageFilter.options[stageFilter.selectedIndex].text}`,g&&`الصف=${g}`, se&&`الشعبة=${se}`, sh&&`الورقة=${sh}`, so&&`المصدر=${so}`].filter(Boolean).join(', ');
+  stats.textContent = `عدد السجلات: ${displayed.length} من ${aggregated.length}${filters?` (${filters})`:''}${q?` — بحث: "${q}"`:''}`;
 
-    renderTable(displayedData);
-    stats.textContent = `عدد السجلات: ${displayedData.length} من ${originalData.length}${
-      g || s ? ` (فلاتر: ${[g&&`الصف=${g}`, s&&`الشعبة=${s}`].filter(Boolean).join(', ')})` : ''
-    }${q ? ` — بحث: "${q}"` : ''}`;
+  // تحديث الفلاتر الأخرى عند تغيير المرحلة
+  updateFiltersByStage();
+  function updateFiltersByStage() {
+    const stage = stageFilter.value.trim();
+    let filtered = aggregated;
+    if (stage) filtered = aggregated.filter(r => r.__template === stage);
+    fillSelect(sheetFilter, uniqueValues(filtered, '__sheet'));
+    fillSelect(sourceFilter, uniqueValues(filtered, '__source'));
+    fillSelect(gradeFilter, uniqueValues(filtered, 'grade'));
+    fillSelect(sectionFilter, uniqueValues(filtered, 'section'));
+  }
+  stageFilter.addEventListener('change', () => {
+    updateFiltersByStage();
+    applyFiltersAndRender();
+  });
   }
 
-  // رسم الجدول + تمكين الفرز بالنقر على رؤوس الأعمدة
   function renderTable(rows){
     tableHead.innerHTML = '';
     tableBody.innerHTML = '';
-
     if (!rows.length){
       tableHead.innerHTML = '<tr><th>لا توجد بيانات مطابقة</th></tr>';
       return;
     }
+    const baseKeys = ['grade','section','name','score','__sheet','__source','__template'];
+    const extraKeys = Array.from(rows.reduce((acc, r)=>{
+      Object.keys(r).forEach(k=>{ if (!baseKeys.includes(k) && !k.startsWith('__')) acc.add(k); });
+      return acc;
+    }, new Set()));
+    const keys = [...baseKeys, ...extraKeys];
 
-    const keys = Object.keys(rows[0]);
-
-    // رأس الجدول
     const headRow = document.createElement('tr');
     keys.forEach(k=>{
       const th = document.createElement('th');
@@ -202,27 +232,24 @@
       th.title = 'انقر للفرز';
       th.addEventListener('click', () => {
         const asc = th.dataset.sort !== 'asc';
-        displayedData.sort((a,b)=>{
-          const va = (a[k] ?? '') + '', vb = (b[k] ?? '') + '';
-          return asc ? va.localeCompare(vb, 'ar', {numeric:true})
-                     : vb.localeCompare(va, 'ar', {numeric:true});
+        rows.sort((a,b)=>{
+          const va = s(a[k]), vb = s(b[k]);
+          return asc ? va.localeCompare(vb, 'ar', {numeric:true}) : vb.localeCompare(va, 'ar', {numeric:true});
         });
-        // ضبط مؤشرات الفرز البصرية (بسيطة)
         [...headRow.children].forEach(h => delete h.dataset.sort);
         th.dataset.sort = asc ? 'asc' : 'desc';
-        renderTable(displayedData);
+        renderTable(rows);
       });
       headRow.appendChild(th);
     });
     tableHead.appendChild(headRow);
 
-    // جسم الجدول
     const frag = document.createDocumentFragment();
     rows.forEach(r=>{
       const tr = document.createElement('tr');
       keys.forEach(k=>{
         const td = document.createElement('td');
-        td.textContent = text(r[k]);
+        td.textContent = s(r[k]);
         tr.appendChild(td);
       });
       frag.appendChild(tr);
@@ -230,106 +257,53 @@
     tableBody.appendChild(frag);
   }
 
-  /* =========================================================
-     تبديل الورقة + فلاتر/بحث + أزرار
-     ========================================================= */
-  sheetFilter.addEventListener('change', () => {
-    const val = sheetFilter.value;
-    const newSheet = val || (sheetNames[0] || '');
-    currentSheet = newSheet;
-    originalData = rawDataBySheet[currentSheet] || [];
-    updateFiltersFromData(originalData);
-    applyFiltersAndRender();
-  });
+  sheetFilter.addEventListener('change', applyFiltersAndRender);
+  sourceFilter.addEventListener('change', applyFiltersAndRender);
+  gradeFilter.addEventListener('change', applyFiltersAndRender);
+  sectionFilter.addEventListener('change', applyFiltersAndRender);
 
-  [gradeFilter, sectionFilter].forEach(el => el.addEventListener('change', applyFiltersAndRender));
-
-  // تقليل ضغط التصفية أثناء الكتابة
-  let searchTimer = null;
-  searchInput.addEventListener('input', () => {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(applyFiltersAndRender, 200);
-  });
-
-  // إعادة التعيين
+  let t=null;
+  searchInput.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(applyFiltersAndRender, 200); });
   resetBtn.addEventListener('click', ()=>{
-    gradeFilter.value = '';
-    sectionFilter.value = '';
-    searchInput.value = '';
-    applyFiltersAndRender();
+    [sheetFilter, sourceFilter, gradeFilter, sectionFilter].forEach(el => el.value='');
+    searchInput.value=''; applyFiltersAndRender();
   });
 
-  // مشاركة النتائج (Web Share API إن توفرت)
   shareBtn.addEventListener('click', async ()=>{
-    const summary = `لوحة درجات تقنية المعلومات — السجلات المعروضة: ${displayedData.length} من ${originalData.length}` +
-      (currentSheet ? ` — ورقة: ${currentSheet}` : '');
-    if (navigator.share) {
-      try{
-        await navigator.share({ title:'لوحة الدرجات', text: summary, url: location.href });
-      }catch(e){ /* المستخدم ألغى */ }
-    } else {
-      navigator.clipboard?.writeText(summary);
-      alert('تم نسخ الملخص للحافظة. يمكنك لصقه في شبكات التواصل.');
-    }
+    const summary = `لوحة متعددة القوالب — السجلات المعروضة: ${displayed.length} من ${aggregated.length}`;
+    if (navigator.share){ try{ await navigator.share({ title:'لوحة الدرجات', text:summary, url:location.href }); }catch(e){} }
+    else { navigator.clipboard?.writeText(summary); alert('تم نسخ الملخص للحافظة.'); }
   });
 
-  // تصدير إلى Excel (الصفوف المفلترة فقط)
   exportXlsxBtn.addEventListener('click', ()=>{
-    if (!displayedData.length) return alert('لا توجد بيانات للتصدير.');
-    const ws = XLSX.utils.json_to_sheet(displayedData);
+    if (!displayed.length) return alert('لا توجد بيانات للتصدير.');
+    const ws = XLSX.utils.json_to_sheet(displayed);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, (currentSheet || 'نتائج'));
-    const filename = `نتائج_تقنية_المعلومات_${currentSheet || 'Sheet'}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.utils.book_append_sheet(wb, ws, 'Results');
+    const filename = `Results_Merged_${new Date().toISOString().slice(0,10)}.xlsx`;
     XLSX.writeFile(wb, filename, { compression:true });
   });
 
-  // تصدير إلى PDF
   exportPdfBtn.addEventListener('click', ()=>{
-    if (!displayedData.length) return alert('لا توجد بيانات للتصدير.');
+    if (!displayed.length) return alert('لا توجد بيانات للتصدير.');
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation:'l', unit:'pt', format:'a4' });
     doc.setFont('helvetica','bold');
-    doc.text('لوحة الدرجات — تقنية المعلومات', 40, 40);
+    doc.text('لوحة الدرجات — متعدد القوالب', 40, 40);
     doc.setFont('helvetica','normal');
-    doc.text(`ورقة: ${currentSheet || 'أول ورقة'} | سجلات: ${displayedData.length}`, 40, 60);
-
-    // الأعمدة والصفوف
-    const keys = Object.keys(displayedData[0]);
+    doc.text(`سجلات: ${displayed.length}`, 40, 60);
+    const keys = Object.keys(displayed[0]);
     const head = [keys];
-    const body = displayedData.map(r => keys.map(k => (r[k] ?? '') + ''));
-
-    doc.autoTable({
-      head, body,
-      startY: 80,
-      styles: { font: 'helvetica', fontSize: 9 },
-      headStyles: { fillColor: [31, 143, 160] }
-    });
-    doc.save(`نتائج_تقنية_المعلومات_${currentSheet || 'Sheet'}.pdf`);
+    const body = displayed.map(r => keys.map(k => s(r[k])));
+    doc.autoTable({ head, body, startY:80, styles:{ font:'helvetica', fontSize:9 }, headStyles:{ fillColor:[31,143,160] } });
+    doc.save(`Results_Merged.pdf`);
   });
 
-  // طباعة
-  printBtn.addEventListener('click', ()=>{
-    window.print();
-  });
-
-  // تعاملات السحب-والإفلات
-  ['dragenter','dragover'].forEach(evt =>
-    dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('hover'); })
-  );
-  ['dragleave','drop'].forEach(evt =>
-    dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove('hover'); })
-  );
-  dropzone.addEventListener('drop', e=>{
-    const file = e.dataTransfer?.files?.[0];
-    if (file) handleFile(file);
-  });
+  printBtn.addEventListener('click', ()=> window.print());
+  ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('hover'); }));
+  ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove('hover'); }));
+  dropzone.addEventListener('drop', e=>{ const files = e.dataTransfer?.files; if (files?.length) handleFiles(files); });
   dropzone.addEventListener('click', ()=> fileInput.click());
-  fileInput.addEventListener('change', e => handleFile(e.target.files?.[0]));
-
-  // رابط README (إرشادي فقط داخل المشروع)
-  readmeLink.addEventListener('click', (e)=>{
-    e.preventDefault();
-    alert('افتح ملف README.md داخل المستودع للاطلاع على طريقة التشغيل والنشر.');
-  });
-
+  fileInput.addEventListener('change', e => handleFiles(e.target.files));
+  readmeLink.addEventListener('click', (e)=>{ e.preventDefault(); alert('انظر README.md داخل المستودع.'); });
 })();
