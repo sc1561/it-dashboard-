@@ -166,31 +166,23 @@ function loadSelectedSheets() {
   const selectedSheets = Array.from(sheetSelect.selectedOptions).map(opt => opt.value);
   if (selectedSheets.length === 0) return alert("يرجى اختيار ورقة واحدة على الأقل");
 
-  allData = []; // تفريغ البيانات السابقة
-
+  // جمع بيانات كل ورقة بشكل مستقل
+  let outputs = [];
   selectedSheets.forEach(sheetName => {
     const sheet = selectedWorkbook.workbook.Sheets[sheetName];
     const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     const headers = json[0] || [];
-    const rows = json.slice(1);
-    const data = rows.map(row => {
+    const rows = json.slice(1).map(row => {
       let entry = {};
       headers.forEach((header, idx) => {
         entry[header] = row[idx];
       });
       return entry;
-    }).filter(entry => entry[headers[0]]); // أول عمود غالباً اسم الطالب
-    allData = allData.concat(data);
+    }).filter(entry => Object.values(entry).some(v => v !== undefined && v !== null && v !== ""));
+    outputs.push({ sheetName, headers, rows });
   });
 
-  // تحديث dynamicHeaders لتكون رؤوس آخر ورقة مختارة فقط (للتوافق مع renderDynamicTable)
-  if (selectedSheets.length > 0) {
-    const lastSheet = selectedWorkbook.workbook.Sheets[selectedSheets[selectedSheets.length - 1]];
-    const lastJson = XLSX.utils.sheet_to_json(lastSheet, { header: 1 });
-    dynamicHeaders = lastJson[0] || [];
-  }
-
-  renderDynamicTable(allData);
+  renderSheetsTabs(outputs);
 }
 
 function renderAnnualTable(data) {
@@ -211,55 +203,100 @@ function renderAnnualTable(data) {
 }
 
 
-function renderDynamicTable(data) {
-  // منطق ذكي لتحديد الأعمدة المطلوبة حسب اسم الورقة أو رؤوس الأعمدة
-  let selectedSheetName = '';
-  if (sheetSelect.selectedOptions.length > 0) {
-    selectedSheetName = sheetSelect.selectedOptions[0].value;
-  }
 
-  let columnsToShow = [];
-  // استمارة تقييم الطالب لمادة تقنية المعلومات للصفوف (1-4)
-  if (selectedSheetName.includes('تقييم') && selectedSheetName.match(/1-4/)) {
-    columnsToShow = ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأسئلة القصيرة", "مجموع درجة الأنشطة العملية", "مجموع درجة المشروع", "درجة الطالب الكلية"];
-  }
-  // استمارة العام الدراسي
-  else if (selectedSheetName.includes('استمارة العام')) {
-    columnsToShow = ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأسئلة القصيرة", "مجموع درجة الأنشطة العملية", "مجموع درجة المشروع", "درجة الطالب الكلية"];
-  }
-  // السجل السنوي
-  else if (selectedSheetName.includes('سجل')) {
-    columnsToShow = ["اسم الطالب", "نتيجة الفصل الدراسي الأول", "درجة نهاية العام", "المستوى"];
-  }
-  // رصد الدرجات للصفوف 5-6 الفصل الأول أو الثاني
-  else if ((selectedSheetName.includes('الفصل الأول') || selectedSheetName.includes('الفصل الثاني')) && selectedSheetName.match(/5-6/)) {
-    columnsToShow = ["اسم الطالب", "مجموع درجات الحوار", "مجموع درجات الأسئلة القصيرة", "مجموع الأنشطة العملية", "مجموع درجة المشروع", "المجموع الكلي", "المستوى"];
-  }
-  // رصد الدرجات للصفوف 7-10 الفصل الأول أو الثاني
-  else if ((selectedSheetName.includes('الفصل الأول') || selectedSheetName.includes('الفصل الثاني')) && selectedSheetName.match(/7-10/)) {
-    columnsToShow = ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأنشطة العملية الأول", "مجموع درجة الأنشطة العملية الثاني", "المجموع", "مجموع درجة الاختبار القصير", "مجموع درجة المشروع", "الدرجة الكلية", "المستوى"];
-  }
-  // رصد الدرجات للصفوف 11-12 الفصل الأول أو الثاني
-  else if ((selectedSheetName.includes('الفصل الأول') || selectedSheetName.includes('الفصل الثاني')) && selectedSheetName.match(/11-12/)) {
-    columnsToShow = ["اسم الطالب", "مجموع الأنشطة العملية الأول", "مجموع الأنشطة العملية الثاني", "المجموع", "مجموع الاختبار العملي", "مجموع الاختبار القصير", "مجموع المشروع", "درجة نهاية الفصل الدراسي", "المجموع الكلي", "المستوى"];
-  }
-  // استمارة المشروع المقترح الأول
-  else if (selectedSheetName.includes('المشروع المقترح الأول')) {
-    columnsToShow = ["اسم الطالب", "مجموع تطبيق العمليات", "مجموع حل المشكلات", "المجموع الكلي"];
-  }
-  // إذا لم تتطابق مع أي نوع معروف، عرض جميع الأعمدة
-  else {
-    columnsToShow = dynamicHeaders;
-  }
+// عرض كل ورقة في تبويب منفصل مع جدول خاص بها وتنسيق احترافي
+function renderSheetsTabs(outputs) {
+  const container = document.getElementById('reportTable');
+  container.innerHTML = '';
+  // إنشاء التبويبات
+  const tabs = document.createElement('div');
+  tabs.className = 'tabs';
+  const tabContents = [];
+  outputs.forEach((out, idx) => {
+    const tabBtn = document.createElement('button');
+    tabBtn.className = 'tab-btn';
+    tabBtn.type = 'button';
+    tabBtn.textContent = out.sheetName;
+    tabs.appendChild(tabBtn);
 
-  // عرض رؤوس الأعمدة المطلوبة
-  headerRow.innerHTML = columnsToShow.map(h => `<th>${h}</th>`).join('');
-  tbody.innerHTML = '';
-  data.forEach(row => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = columnsToShow.map(h => `<td>${row[h] !== undefined ? row[h] : ''}</td>`).join('');
-    tbody.appendChild(tr);
+    const tabContent = document.createElement('div');
+    tabContent.className = 'tab-content';
+    tabContent.id = 'tab-content-' + idx;
+
+    // عنوان الورقة
+    const sheetTitle = document.createElement('div');
+    sheetTitle.className = 'sheet-title';
+    sheetTitle.style = 'font-size:22px; color:#00796b; margin-bottom:10px; font-weight:bold;';
+    sheetTitle.textContent = out.sheetName;
+    tabContent.appendChild(sheetTitle);
+
+    // شريط الأدوات
+    const toolbar = document.createElement('div');
+    toolbar.className = 'toolbar';
+    const csvBtn = document.createElement('button');
+    csvBtn.textContent = 'تنزيل CSV';
+    csvBtn.onclick = () => exportCSV(out.rows, out.headers, out.sheetName);
+    toolbar.appendChild(csvBtn);
+    const jsonBtn = document.createElement('button');
+    jsonBtn.textContent = 'تنزيل JSON';
+    jsonBtn.onclick = () => exportJSON(out.rows, out.sheetName);
+    toolbar.appendChild(jsonBtn);
+    const copyBtn = document.createElement('button');
+    copyBtn.textContent = 'نسخ إلى الحافظة';
+    copyBtn.onclick = () => copyTableToClipboard(tabContent.querySelector('table'));
+    toolbar.appendChild(copyBtn);
+    tabContent.appendChild(toolbar);
+
+    // الجدول
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'table-wrap';
+    const table = document.createElement('table');
+    table.setAttribute('tabindex', '0');
+    const thead = document.createElement('thead');
+    const trHead = document.createElement('tr');
+    out.headers.forEach(col => {
+      const th = document.createElement('th');
+      th.textContent = col;
+      trHead.appendChild(th);
+    });
+    thead.appendChild(trHead);
+    table.appendChild(thead);
+    const tbodyEl = document.createElement('tbody');
+    out.rows.forEach(row => {
+      const tr = document.createElement('tr');
+      out.headers.forEach(col => {
+        const td = document.createElement('td');
+        td.textContent = row[col] !== undefined ? row[col] : '';
+        tr.appendChild(td);
+      });
+      tbodyEl.appendChild(tr);
+    });
+    table.appendChild(tbodyEl);
+    tableWrap.appendChild(table);
+    tabContent.appendChild(tableWrap);
+
+    tabContents.push(tabContent);
+    container.appendChild(tabContent);
   });
+  container.parentNode.insertBefore(tabs, container);
+
+  // تفعيل أول تبويب
+  function activateTab(idx) {
+    tabs.querySelectorAll('.tab-btn').forEach((btn, i) => {
+      btn.classList.toggle('active', i === idx);
+      tabContents[i].classList.toggle('active', i === idx);
+    });
+    tabContents[idx].querySelector('table').focus();
+  }
+  tabs.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.onclick = () => activateTab(i);
+    btn.onkeydown = e => {
+      if (e.key === 'ArrowLeft') activateTab((i - 1 + tabContents.length) % tabContents.length);
+      if (e.key === 'ArrowRight') activateTab((i + 1) % tabContents.length);
+      if (e.key === 'Enter' || e.key === ' ') activateTab(i);
+    };
+  });
+  activateTab(0);
 }
 
 function showExportOptions() {
