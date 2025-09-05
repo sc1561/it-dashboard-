@@ -297,12 +297,13 @@
             let val = row[`الأسئلة القصيرة ${i}`] ?? row[`الأسئلة القصيرة${i}`] ?? row[`الأسئلة القصيرة_${i}`] ?? 0;
             shortqSum += parseFloat(val)||0;
           }
-          // العملية: 3 أعمدة
+          // العملية: 3 أعمدة كل قسم من 15 درجة
           let practicalSum = 0;
           for(let i=1;i<=3;i++){
             let val = row[`العملية ${i}`] ?? row[`العملية${i}`] ?? row[`العملية_${i}`] ?? 0;
             practicalSum += parseFloat(val)||0;
           }
+          // مجموع العملية النهائي من 45
           // المشروع: عمود واحد
           let projectVal = row['المشروع'] ?? row['درجة المشروع'] ?? row['المشروع النهائي'] ?? 0;
           projectVal = parseFloat(projectVal)||0;
