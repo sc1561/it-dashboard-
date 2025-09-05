@@ -143,21 +143,31 @@
   }
 
   async function handleFiles(fileList){
+  // تفريغ كل البيانات والفلاتر عند رفع ملفات جديدة
   stageHeaders = {};
-    if (!fileList?.length) return;
-    showLoader(true);
-    try{
-      aggregated = [];
-      allSheets.clear(); allSources.clear();
-      for (const file of fileList){
-        const part = await parseFile(file);
-        aggregated.push(...part);
-      }
-  updateFiltersByStage();
-  applyFiltersAndRender();
-  stats.textContent = `تم تحميل ${fileList.length} ملف(ات) — السجلات: ${aggregated.length}`;
-  // عرض القواميس لكل مرحلة بعد الرفع
-  showStageHeaders();
+  aggregated = [];
+  displayed = [];
+  allSheets.clear();
+  allSources.clear();
+  fillSelect(sheetFilter, []);
+  fillSelect(sourceFilter, []);
+  fillSelect(gradeFilter, []);
+  fillSelect(sectionFilter, []);
+  tableHead.innerHTML = '';
+  tableBody.innerHTML = '';
+  stats.textContent = 'جاري تحميل البيانات...';
+  if (!fileList?.length) return;
+  showLoader(true);
+  try{
+    for (const file of fileList){
+      const part = await parseFile(file);
+      aggregated.push(...part);
+    }
+    updateFiltersByStage();
+    applyFiltersAndRender();
+    stats.textContent = `تم تحميل ${fileList.length} ملف(ات) — السجلات: ${aggregated.length}`;
+    // عرض القواميس لكل مرحلة بعد الرفع
+    showStageHeaders();
   // دالة لعرض قواميس الأعمدة لكل مرحلة
   function showStageHeaders() {
     let msg = 'قواميس الأعمدة لكل مرحلة:\n';
