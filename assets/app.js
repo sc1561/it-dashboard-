@@ -2,6 +2,8 @@
    لوحة تقارير ودرجات — متعدد القوالب (Read-Only)
    ========================================================= */
 (() => {
+  // تخزين قواميس الأعمدة لكل مرحلة
+  let stageHeaders = {};
   const fileInput     = document.getElementById('fileInput');
   const dropzone      = document.getElementById('dropzone');
   const loader        = document.getElementById('loader');
@@ -115,6 +117,11 @@
       if (!rows.length) return;
       const headers = Object.keys(rows[0]);
       const template = findTemplate(fileName, sheetName, headers);
+      // تخزين القواميس حسب المرحلة
+      if (template && template.id) {
+        if (!stageHeaders[template.id]) stageHeaders[template.id] = new Set();
+        headers.forEach(h => stageHeaders[template.id].add(h));
+      }
       const normHeaders = normalizeHeaders(headers, template);
       rows = rows.map(r => {
         const o = {};
@@ -136,6 +143,7 @@
   }
 
   async function handleFiles(fileList){
+  stageHeaders = {};
     if (!fileList?.length) return;
     showLoader(true);
     try{
@@ -147,7 +155,18 @@
       }
   updateFiltersByStage();
   applyFiltersAndRender();
-      stats.textContent = `تم تحميل ${fileList.length} ملف(ات) — السجلات: ${aggregated.length}`;
+  stats.textContent = `تم تحميل ${fileList.length} ملف(ات) — السجلات: ${aggregated.length}`;
+  // عرض القواميس لكل مرحلة بعد الرفع
+  showStageHeaders();
+  // دالة لعرض قواميس الأعمدة لكل مرحلة
+  function showStageHeaders() {
+    let msg = 'قواميس الأعمدة لكل مرحلة:\n';
+    Object.entries(stageHeaders).forEach(([stage, headers]) => {
+      msg += `\n- ${stage}:\n   ${Array.from(headers).join(', ')}\n`;
+    });
+    if (Object.keys(stageHeaders).length)
+      alert(msg);
+  }
     }catch(e){
       console.error(e);
       alert('تعذر قراءة بعض الملفات. تأكد من الصيغة أو احفظ كـ .xlsx ثم أعد الرفع.');
