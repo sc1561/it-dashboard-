@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>التقارير في مادة تقنية المعلومات — مخصصة</title>
+  <title>التقارير في مادة تقنية المعلومات — نسخة ثابتة</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f3f4f6, #e0f7fa); padding: 20px; direction: rtl; color: #333; }
@@ -163,21 +163,24 @@
 
     // أدوات مطابقة أعمدة
     function headerIndex(headers, keys){
-      const nh = headers.map(h => normalize(h));
+      const nh = headers.map(h => normalize(h || "")); // حماية من undefined
       for (let i=0;i<nh.length;i++){
-        for (const k of keys){ if (nh[i] === normalize(k)) return i; }
+        for (const k of keys){
+          if (nh[i] === normalize(k)) return i;
+        }
       }
       for (let i=0;i<nh.length;i++){
         for (const k of keys){
           const t = normalize(k);
-          if (t && nh[i].includes(t)) return i;
+          if (t && nh[i] && nh[i].includes(t)) return i; // حماية قبل includes
         }
       }
       return -1;
     }
 
     function detectBand(name, headers){
-      const title = (name||'') + ' ' + (headers||[]).join(' ');
+      const safeHeaders = (headers||[]).map(h => h || ""); // حماية من undefined
+      const title = (name||"") + " " + safeHeaders.join(" ");
       if (/سجل|كشف|سنوي/.test(title)) return 'annual';
       if (/(^|[^0-9])1-4([^0-9]|$)/.test(title))  return '1-4';
       if (/(^|[^0-9])5-6([^0-9]|$)/.test(title))  return '5-6';
@@ -194,14 +197,15 @@
     }
 
     function buildColumnMap(headers, band){
+      const safeHeaders = (headers||[]).map(h => (h===undefined || h===null) ? '' : String(h));
       const order = preferredColumnsForBand(band);
       const map = [];
       order.forEach(group => {
-        const idx = headerIndex(headers, group);
-        if (idx >= 0) map.push({title: headers[idx] || group[0], idx});
+        const idx = headerIndex(safeHeaders, group);
+        if (idx >= 0) map.push({title: safeHeaders[idx] || group[0], idx});
       });
       // fallback: لو ما تعرّف ولا عمود، اعرض كل الأعمدة كما هي
-      if (map.length === 0) return headers.map((h,i)=>({title:h, idx:i}));
+      if (map.length === 0) return safeHeaders.map((h,i)=>({title:h, idx:i}));
       return map;
     }
 
@@ -248,7 +252,7 @@
 
           rows.forEach(r=>{
             const obj = {};
-            colMap.forEach(({title, idx})=> obj[title] = r[idx]);
+            colMap.forEach(({title, idx})=> obj[title] = (r && r[idx] !== undefined) ? r[idx] : '');
             allData.push(obj);
           });
 
@@ -272,11 +276,11 @@
 
     // الرسم
     function renderTable(data, headers){
-      headerRow.innerHTML = headers.map(h=>`<th>${h}</th>`).join('');
+      headerRow.innerHTML = (headers||[]).map(h=>`<th>${h ?? ''}</th>`).join('');
       tbody.innerHTML = '';
-      data.forEach(row=>{
+      (data||[]).forEach(row=>{
         const tr = document.createElement('tr');
-        tr.innerHTML = headers.map(h=>`<td>${row[h] ?? ''}</td>`).join('');
+        tr.innerHTML = (headers||[]).map(h=>`<td>${(row && row[h] !== undefined && row[h] !== null) ? row[h] : ''}</td>`).join('');
         tbody.appendChild(tr);
       });
     }
