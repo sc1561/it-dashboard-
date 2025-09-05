@@ -1,128 +1,84 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>لوحة تقارير ودرجات — تقنية المعلومات</title>
+async function handleFile(file){
+  if(!file) return;
 
-    <!-- خط Cairo -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  showLoader(true);
 
-    <!-- ورقة الأنماط -->
-    <link rel="stylesheet" href="assets/styles.css" />
+  // 1) فحص الامتداد أولًا
+  const name = file.name || '';
+  const lower = name.toLowerCase();
+  const isCSV  = lower.endsWith('.csv');
+  const isXLSX = lower.endsWith('.xlsx') || lower.endsWith('.xlsm');
+  const isXLS  = lower.endsWith('.xls');
 
-    <!-- مكتبات الطرف الثالث (CDN) -->
-    <!-- SheetJS لقراءة/كتابة Excel -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
-    <!-- jsPDF + AutoTable لتصدير PDF -->
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-  </head>
-  <body>
-    <header class="app-header">
-      <div class="brand">
-        <div class="logo" aria-hidden="true">IT</div>
-        <div>
-          <h1>لوحة التقارير والدرجات</h1>
-          <p class="subtitle">مادة تقنية المعلومات — عرض البيانات فقط</p>
-        </div>
-      </div>
+  try {
+    const buf = await file.arrayBuffer();
 
-      <div class="ro-badge" title="النظام لا يخزن ملفاتك، كل المعالجة تتم محليًا في المتصفح.">
-        للعرض فقط
-      </div>
-    </header>
+    // 2) خيارات قراءة مرنة
+    /** ملاحظات:
+     * - type:'array' يناسب معظم الصيغ الحديثة.
+     * - cellDates:true يحفظ التواريخ ككائن Date.
+     * - WTF:true يعطي أخطاء تشخيصية لملفات معطوبة.
+     */
+    workbook = XLSX.read(buf, {
+      type: 'array',
+      cellDates: true,
+      raw: false,
+      WTF: true
+    });
 
-    <!-- شريط تعليمات سياسة التحرير -->
-    <section class="notice">
-      <strong>كيف أعدّل الدرجات؟</strong>
-      <span>النظام <u>لا</u> يحرّر البيانات داخليًا. لتحرير الدرجات: حدّث ملف Excel الأصلي (على Google Drive/OneDrive) ثم <b>أعد رفعه هنا</b>.</span>
-    </section>
+    // 3) معالجة CSV خاصّة (أحيانًا أفضل كمسار منفصل)
+    if (isCSV && (!workbook.SheetNames || workbook.SheetNames.length === 0)) {
+      const text = await file.text();
+      const csvWB = XLSX.read(text, { type: 'string' });
+      workbook = csvWB;
+    }
 
-    <!-- منطقة الرفع والتحكم -->
-    <main class="container">
-      <section class="uploader" id="uploader">
-        <label for="fileInput" class="dropzone" id="dropzone">
-          <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
-          <div class="dz-icon">⬆️</div>
-          <div>
-            <div class="dz-title">اسحب ملف Excel وأفلته هنا</div>
-            <div class="dz-sub">أو انقر للاختيار (.xlsx / .xls)</div>
-          </div>
-        </label>
-        <div class="tips">
-          <ul>
-            <li>لا يتم رفع الملف إلى خادم — تتم القراءة محليًا في المتصفح.</li>
-            <li>يدعم تعدد أوراق العمل داخل الملف.</li>
-            <li>تأكد من وجود أعمدة مثل: <code>الصف</code>، <code>الشعبة</code>، <code>الاسم</code>، <code>الدرجة</code>.</li>
-          </ul>
-        </div>
-      </section>
+    // 4) تحقّق من وجود أوراق
+    sheetNames = workbook.SheetNames || [];
+    if (!sheetNames.length) {
+      throw new Error('لم يتم العثور على أوراق عمل داخل الملف.');
+    }
 
-      <!-- شريط أدوات -->
-      <section class="toolbar" aria-label="أدوات التحكم">
-        <div class="filters">
-          <label>
-            الصف
-            <select id="gradeFilter">
-              <option value="">الكل</option>
-            </select>
-          </label>
-          <label>
-            الشعبة
-            <select id="sectionFilter">
-              <option value="">الكل</option>
-            </select>
-          </label>
-          <label>
-            ورقة العمل
-            <select id="sheetFilter">
-              <option value="">(أول ورقة)</option>
-            </select>
-          </label>
-        </div>
+    // 5) تحويل كل ورقة إلى JSON مع defval لتجنب undefined
+    rawDataBySheet = {};
+    sheetNames.forEach(name => {
+      const ws = workbook.Sheets[name];
+      // defval:'' يضمن عدم وجود قيم undefined
+      const json = XLSX.utils.sheet_to_json(ws, {
+        defval: '',
+        raw: false,      // يحوّل الأرقام/التواريخ لنصوص مقروءة عند اللزوم
+        blankrows: false
+      });
+      rawDataBySheet[name] = json;
+    });
 
-        <div class="search">
-          <input id="searchInput" type="search" placeholder="بحث بالاسم..." autocomplete="off" />
-        </div>
+    // 6) إنذار مبكر لو لم توجد صفوف فعلية
+    const firstSheet = sheetNames[0];
+    if (!rawDataBySheet[firstSheet]?.length) {
+      throw new Error('تم فتح الملف بنجاح لكن لم يتم العثور على صفوف بيانات. تأكد أن الصف الأول يحوي عناوين أعمدة واضحة.');
+    }
 
-        <div class="actions">
-          <button id="shareBtn" class="ghost" title="مشاركة ملخص النتائج">مشاركة</button>
-          <div class="split-btn">
-            <button id="exportPdfBtn">PDF</button>
-            <button id="exportXlsxBtn">Excel</button>
-            <button id="printBtn">طباعة</button>
-          </div>
-          <button id="resetBtn" class="ghost">تصفير الفلاتر</button>
-        </div>
-      </section>
+    // 7) تحديث القوائم والعرض
+    fillSheetFilter(sheetNames);
+    currentSheet = sheetNames[0] || '';
+    originalData = rawDataBySheet[currentSheet] || [];
+    updateFiltersFromData(originalData);
+    applyFiltersAndRender();
 
-      <!-- عدّاد النتائج -->
-      <div class="stats" id="stats">لم يتم تحميل بيانات بعد</div>
+    stats.textContent = `تم تحميل الملف: ${name} — الأوراق: ${sheetNames.length}`;
+  } catch (err) {
+    console.error(err);
 
-      <!-- الجدول -->
-      <section class="table-wrap">
-        <div class="table-scroll">
-          <table id="dataTable" class="data-table">
-            <thead id="tableHead"></thead>
-            <tbody id="tableBody"></tbody>
-          </table>
-        </div>
-      </section>
-    </main>
-
-    <!-- مؤشر تحميل -->
-    <div id="loader" class="loader" aria-hidden="true">
-      <div class="spinner"></div>
-      <div>جاري المعالجة…</div>
-    </div>
-
-    <footer class="app-footer">
-      <span>© لوحة تقارير تقنية المعلومات — عرض فقط</span>
-      <a href="#" id="readmeLink">تعليمات التشغيل (README)</a>
-    </footer>
-
-    <!-- سكربت التطبيق -->
-    <script src="assets/app.js"></script>
-  </body>
-</html>
+    // 8) رسائل خطأ مفيدة بحسب الحالة
+    let hint = 'تعذر قراءة الملف. تأكد أن الصيغة صحيحة وأن الملف غير محمي بكلمة مرور.';
+    if (isXLS) {
+      hint += '\nملاحظة: ملفات ‎.xls‎ القديمة قد تحتوي تنسيقًا لا يُقرأ دائمًا. جرّب حفظه كـ ‎.xlsx‎ من Excel ثم أعد رفعه.';
+    }
+    if (!isCSV && !isXLS && !isXLSX) {
+      hint += '\nالامتدادات المدعومة: ‎.xlsx / .xlsm / .xls / .csv';
+    }
+    alert(hint);
+  } finally {
+    showLoader(false);
+  }
+}
