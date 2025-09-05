@@ -39,6 +39,12 @@
   <input type="text" id="search" placeholder="أدخل الاسم..." />
 </div>
 
+  <!-- خريطة الأعمدة الديناميكية -->
+  <div id="columnsMap" style="margin-top:30px; display:none; background:#fff; border:1px solid #26a69a; border-radius:8px; padding:16px;">
+    <h2 style="color:#006064; font-size:22px;">خريطة الأعمدة في ملف Excel</h2>
+    <div id="columnsList"></div>
+  </div>
+
 <table id="reportTable">
   <thead><tr id="headerRow"></tr></thead>
   <tbody></tbody>
@@ -73,6 +79,7 @@ const popup = document.getElementById('popup');
 let workbooks = [];
 let allData = [];
 let reportType = 'regular';
+let dynamicHeaders = [];
 
 fileInput.addEventListener('change', async (e) => {
   const files = Array.from(e.target.files);
@@ -110,6 +117,39 @@ function populateSheets(classIndex) {
     option.textContent = name;
     sheetSelect.appendChild(option);
   });
+
+  // عرض خريطة الأعمدة للورقة الأولى تلقائياً
+  if (wb.SheetNames.length > 0) {
+    showColumnsMap(wb, wb.SheetNames[0]);
+  }
+}
+
+// عند تغيير الورقة المختارة، عرض خريطة الأعمدة
+sheetSelect.addEventListener('change', () => {
+  const classIndex = parseInt(classSelect.value);
+  const wb = workbooks[classIndex].workbook;
+  const sheetName = sheetSelect.value;
+  showColumnsMap(wb, sheetName);
+});
+
+function showColumnsMap(wb, sheetName) {
+  const sheet = wb.Sheets[sheetName];
+  if (!sheet) return;
+  const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+  const headers = json[0] || [];
+  const columnsList = document.getElementById('columnsList');
+  const columnsMapDiv = document.getElementById('columnsMap');
+  if (headers.length === 0) {
+    columnsList.innerHTML = '<span style="color:red">لا توجد رؤوس أعمدة في هذه الورقة.</span>';
+    columnsMapDiv.style.display = 'block';
+    dynamicHeaders = [];
+    return;
+  }
+  columnsList.innerHTML = '<ul style="list-style:disc; padding-right:20px;">' +
+    headers.map(h => `<li style='margin:6px 0; font-size:17px;'>${h}</li>`).join('') + '</ul>';
+  columnsMapDiv.style.display = 'block';
+  // حفظ الأعمدة الديناميكية لاستخدامها في عرض الجدول
+  dynamicHeaders = headers;
 }
 
 function loadSelectedSheets() {
@@ -122,40 +162,19 @@ function loadSelectedSheets() {
   selectedSheets.forEach(sheetName => {
     const sheet = selectedWorkbook.workbook.Sheets[sheetName];
     const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    const rows = json.slice(5);
-    if (sheetName.includes("سجل")) {
-      reportType = 'annual';
-      const data = rows.map(row => {
-        const term1 = parseFloat(row[4]) || 0;
-        const term2 = parseFloat(row[9]) || 0;
-        return {
-          name: row[1],
-          term1Grade: row[4],
-          term1Level: row[5],
-          term2Grade: row[9],
-          term2Level: row[10],
-          finalGrade: ((term1 + term2) / 2).toFixed(1)
-        };
-      }).filter(entry => entry.name);
-      allData = allData.concat(data); // دمج البيانات
-    } else {
-      reportType = 'regular';
-      const data = rows.map(row => ({
-        name: row[1],
-        oral1: row[2],
-        oral2: row[3],
-        practical1: row[5],
-        practical2: row[6],
-        project: row[8],
-        exam: row[9],
-        total: row[10]
-      })).filter(entry => entry.name);
-      allData = allData.concat(data); // دمج البيانات
-    }
+    // استخراج الصفوف بعد رؤوس الأعمدة مباشرة (بدون تخطي 5 صفوف)
+    const rows = json.slice(1);
+    const data = rows.map(row => {
+      let entry = {};
+      dynamicHeaders.forEach((header, idx) => {
+        entry[header] = row[idx];
+      });
+      return entry;
+    }).filter(entry => entry[dynamicHeaders[0]]); // أول عمود غالباً اسم الطالب
+    allData = allData.concat(data);
   });
 
-  if (reportType === 'annual') renderAnnualTable(allData);
-  else renderRegularTable(allData);
+  renderDynamicTable(allData);
 }
 
 function renderAnnualTable(data) {
@@ -175,12 +194,95 @@ function renderAnnualTable(data) {
   });
 }
 
-function renderRegularTable(data) {
-  headerRow.innerHTML = `<th>اسم الطالب</th><th>الأعمال الشفوية 1</th><th>الأعمال الشفوية 2</th><th>النشاط العملي 1</th><th>النشاط العملي 2</th><th>درجة المشروع</th><th>درجة الاختبار</th><th>المجموع الكلي للدرجات</th>`;
+
+function renderDynamicTable(data) {
+  // منطق ذكي لتحديد الأعمدة المطلوبة حسب اسم الورقة أو رؤوس الأعمدة
+  let selectedSheetName = '';
+  if (sheetSelect.selectedOptions.length > 0) {
+    selectedSheetName = sheetSelect.selectedOptions[0].value;
+  }
+
+  let columnsToShow = [];
+  // استمارة تقييم الطالب لمادة تقنية المعلومات للصفوف (1-4)
+  if (selectedSheetName.includes('تقييم') && selectedSheetName.match(/1-4/)) {
+    columnsToShow = ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأسئلة القصيرة", "مجموع درجة الأنشطة العملية", "مجموع درجة المشروع", "درجة الطالب الكلية"];
+  }
+  // استمارة العام الدراسي
+  else if (selectedSheetName.includes('استمارة العام')) {
+    columnsToShow = ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأسئلة القصيرة", "مجموع درجة الأنشطة العملية", "مجموع درجة المشروع", "درجة الطالب الكلية"];
+  }
+  // السجل السنوي
+  else if (selectedSheetName.includes('سجل')) {
+    columnsToShow = ["اسم الطالب", "نتيجة الفصل الدراسي الأول", "درجة نهاية العام", "المستوى"];
+  }
+  // رصد الدرجات للصفوف 5-6 الفصل الأول أو الثاني
+  else if (
+    (selectedSheetName.includes('رصد الدرجات للصفوف 5-6') && (selectedSheetName.includes('الفصل الأول') || selectedSheetName.includes('الفصل الثاني')))
+  ) {
+    columnsToShow = ["اسم الطالب", "مجموع درجات الحوار", "مجموع درجات الأسئلة القصيرة", "مجموع الأنشطة العملية", "مجموع درجة المشروع", "المجموع الكلي", "المستوى"];
+  }
+  // رصد الدرجات للصفوف 7-10 الفصل الأول أو الثاني
+  else if (
+    (selectedSheetName.includes('رصد الدرجات للصفوف 7-10') && (selectedSheetName.includes('الفصل الأول') || selectedSheetName.includes('الفصل الثاني')))
+  ) {
+    columnsToShow = [
+      "اسم الطالب",
+      "مجموع درجة الحوار",
+      "مجموع درجة الأنشطة العملية الأول",
+      "مجموع درجة الأنشطة العملية الثاني",
+      "المجموع",
+      "مجموع درجة الاختبار القصير",
+      "مجموع درجة المشروع",
+      "الدرجة الكلية",
+      "المستوى"
+    ];
+  }
+  // رصد ومتابعة أداء الطلبة للصفين 11 و12 الفصل الأول أو الثاني
+  else if (
+    (selectedSheetName.includes('رصد ومتابعة أداء الطلبة للصفين 11 و12') && (selectedSheetName.includes('الفصل الأول') || selectedSheetName.includes('الفصل الثاني')))
+  ) {
+    columnsToShow = [
+      "اسم الطالب",
+      "مجموع الأنشطة العملية الأول",
+      "مجموع الأنشطة العملية الثاني",
+      "المجموع",
+      "مجموع الاختبار العملي",
+      "مجموع الاختبار القصير",
+      "مجموع المشروع",
+      "درجة نهاية الفصل الدراسي",
+      "المجموع الكلي",
+      "المستوى"
+    ];
+  }
+  // سجل سنوي للصفين 11 و12
+  else if (
+    (selectedSheetName.includes('رصد ومتابعة أداء الطلبة للصفين 11 و12') && selectedSheetName.includes('سجل'))
+  ) {
+    columnsToShow = [
+      "اسم الطالب",
+      "درجة الفصل الأول",
+      "المستوى الفصل الأول",
+      "درجة الفصل الثاني",
+      "المستوى الفصل الثاني",
+      "درجة نهاية العام",
+      "المستوى نهاية العام"
+    ];
+  }
+  // استمارة المشروع المقترح الأول
+  else if (selectedSheetName.includes('المشروع المقترح الأول')) {
+    columnsToShow = ["اسم الطالب", "مجموع تطبيق العمليات", "مجموع حل المشكلات", "المجموع الكلي"];
+  }
+  // إذا لم تتطابق مع أي نوع معروف، عرض جميع الأعمدة
+  else {
+    columnsToShow = dynamicHeaders;
+  }
+
+  // عرض رؤوس الأعمدة المطلوبة
+  headerRow.innerHTML = columnsToShow.map(h => `<th>${h}</th>`).join('');
   tbody.innerHTML = '';
   data.forEach(row => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${row.name}</td><td>${row.oral1} / 10</td><td>${row.oral2} / 10</td><td>${row.practical1} / 20</td><td>${row.practical2} / 20</td><td>${row.project} / 20</td><td>${row.exam} / 20</td><td>${row.total}</td>`;
+    tr.innerHTML = columnsToShow.map(h => `<td>${row[h] !== undefined ? row[h] : ''}</td>`).join('');
     tbody.appendChild(tr);
   });
 }
