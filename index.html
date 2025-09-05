@@ -279,7 +279,7 @@
     function renderTable(data, headers){
       // إذا كان النطاق 1-4، اعرض الأعمدة المجمعة
       if (detectedBand === '1-4') {
-        headerRow.innerHTML = `<th>اسم الطالب</th><th>مجموع الحوار (20)</th><th>مجموع الأسئلة القصيرة (20)</th><th>مجموع العملية (15)</th><th>درجة المشروع (15)</th><th>الدرجة الكلية (100)</th>`;
+  headerRow.innerHTML = `<th>اسم الطالب</th><th>مجموع الحوار (20)</th><th>مجموع الأسئلة القصيرة (20)</th><th>مجموع الأنشطة العملية (45)</th><th>درجة المشروع (15)</th><th>الدرجة الكلية (100)</th>`;
         tbody.innerHTML = '';
         (data||[]).forEach(row=>{
           const studentName = row['اسم الطالب']||row['الطالب']||'';
