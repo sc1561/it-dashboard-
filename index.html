@@ -196,51 +196,24 @@ function renderAnnualTable(data) {
 
 
 function renderDynamicTable(data) {
-  // منطق ذكي لتحديد الأعمدة المطلوبة حسب اسم الورقة أو رؤوس الأعمدة
   let selectedSheetName = '';
   if (sheetSelect.selectedOptions.length > 0) {
     selectedSheetName = sheetSelect.selectedOptions[0].value;
   }
 
   let columnsToShow = [];
-  // استمارة تقييم الطالب لمادة تقنية المعلومات للصفوف (1-4)
-  if (selectedSheetName.includes('تقييم') && selectedSheetName.match(/1-4/)) {
-    columnsToShow = ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأسئلة القصيرة", "مجموع درجة الأنشطة العملية", "مجموع درجة المشروع", "درجة الطالب الكلية"];
-  }
-  // استمارة العام الدراسي
-  else if (selectedSheetName.includes('استمارة العام')) {
-    columnsToShow = ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأسئلة القصيرة", "مجموع درجة الأنشطة العملية", "مجموع درجة المشروع", "درجة الطالب الكلية"];
-  }
-  // السجل السنوي
-  else if (selectedSheetName.includes('سجل')) {
-    columnsToShow = ["اسم الطالب", "نتيجة الفصل الدراسي الأول", "درجة نهاية العام", "المستوى"];
-  }
-  // رصد الدرجات للصفوف 5-6 الفصل الأول أو الثاني
-  else if (
-    (selectedSheetName.includes('رصد الدرجات للصفوف 5-6') && (selectedSheetName.includes('الفصل الأول') || selectedSheetName.includes('الفصل الثاني')))
-  ) {
-    columnsToShow = ["اسم الطالب", "مجموع درجات الحوار", "مجموع درجات الأسئلة القصيرة", "مجموع الأنشطة العملية", "مجموع درجة المشروع", "المجموع الكلي", "المستوى"];
-  }
-  // رصد الدرجات للصفوف 7-10 الفصل الأول أو الثاني
-  else if (
-    (selectedSheetName.includes('رصد الدرجات للصفوف 7-10') && (selectedSheetName.includes('الفصل الأول') || selectedSheetName.includes('الفصل الثاني')))
-  ) {
+  // الحالات الخاصة أولاً
+  if (selectedSheetName.includes('رصد ومتابعة أداء الطلبة للصفين 11 و12') && selectedSheetName.includes('سجل')) {
     columnsToShow = [
       "اسم الطالب",
-      "مجموع درجة الحوار",
-      "مجموع درجة الأنشطة العملية الأول",
-      "مجموع درجة الأنشطة العملية الثاني",
-      "المجموع",
-      "مجموع درجة الاختبار القصير",
-      "مجموع درجة المشروع",
-      "الدرجة الكلية",
-      "المستوى"
+      "درجة الفصل الأول",
+      "المستوى الفصل الأول",
+      "درجة الفصل الثاني",
+      "المستوى الفصل الثاني",
+      "درجة نهاية العام",
+      "المستوى نهاية العام"
     ];
-  }
-  // رصد ومتابعة أداء الطلبة للصفين 11 و12 الفصل الأول أو الثاني
-  else if (
-    (selectedSheetName.includes('رصد ومتابعة أداء الطلبة للصفين 11 و12') && (selectedSheetName.includes('الفصل الأول') || selectedSheetName.includes('الفصل الثاني')))
-  ) {
+  } else if (selectedSheetName.includes('رصد ومتابعة أداء الطلبة للصفين 11 و12') && selectedSheetName.includes('الفصل الأول')) {
     columnsToShow = [
       "اسم الطالب",
       "مجموع الأنشطة العملية الأول",
@@ -253,31 +226,61 @@ function renderDynamicTable(data) {
       "المجموع الكلي",
       "المستوى"
     ];
-  }
-  // سجل سنوي للصفين 11 و12
-  else if (
-    (selectedSheetName.includes('رصد ومتابعة أداء الطلبة للصفين 11 و12') && selectedSheetName.includes('سجل'))
-  ) {
+  } else if (selectedSheetName.includes('رصد ومتابعة أداء الطلبة للصفين 11 و12') && selectedSheetName.includes('الفصل الثاني')) {
     columnsToShow = [
       "اسم الطالب",
-      "درجة الفصل الأول",
-      "المستوى الفصل الأول",
-      "درجة الفصل الثاني",
-      "المستوى الفصل الثاني",
-      "درجة نهاية العام",
-      "المستوى نهاية العام"
+      "مجموع الأنشطة العملية الأول",
+      "مجموع الأنشطة العملية الثاني",
+      "المجموع",
+      "مجموع الاختبار العملي",
+      "مجموع الاختبار القصير",
+      "مجموع المشروع",
+      "درجة نهاية الفصل الدراسي",
+      "المجموع الكلي",
+      "المستوى"
     ];
-  }
-  // استمارة المشروع المقترح الأول
-  else if (selectedSheetName.includes('المشروع المقترح الأول')) {
+  } else if (selectedSheetName.includes('رصد الدرجات للصفوف 7-10') && selectedSheetName.includes('المشروع المقترح الأول')) {
     columnsToShow = ["اسم الطالب", "مجموع تطبيق العمليات", "مجموع حل المشكلات", "المجموع الكلي"];
-  }
-  // إذا لم تتطابق مع أي نوع معروف، عرض جميع الأعمدة
-  else {
+  } else if (selectedSheetName.includes('رصد الدرجات للصفوف 7-10') && selectedSheetName.includes('الفصل الأول')) {
+    columnsToShow = [
+      "اسم الطالب",
+      "مجموع درجة الحوار",
+      "مجموع درجة الأنشطة العملية الأول",
+      "مجموع درجة الأنشطة العملية الثاني",
+      "المجموع",
+      "مجموع درجة الاختبار القصير",
+      "مجموع درجة المشروع",
+      "الدرجة الكلية",
+      "المستوى"
+    ];
+  } else if (selectedSheetName.includes('رصد الدرجات للصفوف 7-10') && selectedSheetName.includes('الفصل الثاني')) {
+    columnsToShow = [
+      "اسم الطالب",
+      "مجموع درجة الحوار",
+      "مجموع درجة الأنشطة العملية الأول",
+      "مجموع درجة الأنشطة العملية الثاني",
+      "المجموع",
+      "مجموع درجة الاختبار القصير",
+      "مجموع درجة المشروع",
+      "الدرجة الكلية",
+      "المستوى"
+    ];
+  } else if (selectedSheetName.includes('رصد الدرجات للصفوف 5-6') && selectedSheetName.includes('المشروع المقترح الأول')) {
+    columnsToShow = ["اسم الطالب", "مجموع تطبيق العمليات", "مجموع حل المشكلات", "المجموع الكلي"];
+  } else if (selectedSheetName.includes('رصد الدرجات للصفوف 5-6') && selectedSheetName.includes('الفصل الأول')) {
+    columnsToShow = ["اسم الطالب", "مجموع درجات الحوار", "مجموع درجات الأسئلة القصيرة", "مجموع الأنشطة العملية", "مجموع درجة المشروع", "المجموع الكلي", "المستوى"];
+  } else if (selectedSheetName.includes('رصد الدرجات للصفوف 5-6') && selectedSheetName.includes('الفصل الثاني')) {
+    columnsToShow = ["اسم الطالب", "مجموع درجات الحوار", "مجموع درجات الأسئلة القصيرة", "مجموع الأنشطة العملية", "مجموع درجة المشروع", "المجموع الكلي", "المستوى"];
+  } else if (selectedSheetName.includes('تقييم') && selectedSheetName.match(/1-4/)) {
+    columnsToShow = ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأسئلة القصيرة", "مجموع درجة الأنشطة العملية", "مجموع درجة المشروع", "درجة الطالب الكلية"];
+  } else if (selectedSheetName.includes('استمارة العام')) {
+    columnsToShow = ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأسئلة القصيرة", "مجموع درجة الأنشطة العملية", "مجموع درجة المشروع", "درجة الطالب الكلية"];
+  } else if (selectedSheetName.includes('سجل') && selectedSheetName.match(/1-4/)) {
+    columnsToShow = ["اسم الطالب", "نتيجة الفصل الدراسي الأول", "درجة نهاية العام", "المستوى"];
+  } else {
     columnsToShow = dynamicHeaders;
   }
 
-  // عرض رؤوس الأعمدة المطلوبة
   headerRow.innerHTML = columnsToShow.map(h => `<th>${h}</th>`).join('');
   tbody.innerHTML = '';
   data.forEach(row => {
