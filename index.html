@@ -39,7 +39,7 @@
     <input type="text" id="search" placeholder="أدخل الاسم..." />
     <span id="bandBadge" class="pill" title="النطاق المكتشف"></span>
   </div>
-  <div class="note">ملاحظة: يُفضّل فتح الملف عبر خادم محلي أو استضافة (بدلاً من file://) لضمان عمل القراءة.</div>
+
 
   <table id="reportTable">
     <thead><tr id="headerRow"></tr></thead>
@@ -275,10 +275,53 @@
     }
 
     // الرسم
+
     function renderTable(data, headers){
+      // إذا كان النطاق 1-4، اعرض الأعمدة المجمعة
+      if (detectedBand === '1-4') {
+        headerRow.innerHTML = `<th>اسم الطالب</th><th>مجموع الحوار (20)</th><th>مجموع الأسئلة القصيرة (20)</th><th>مجموع العملية (15)</th><th>درجة المشروع (15)</th><th>الدرجة الكلية (100)</th>`;
+        tbody.innerHTML = '';
+        (data||[]).forEach(row=>{
+          const studentName = row['اسم الطالب']||row['الطالب']||'';
+          if (!studentName || String(studentName).trim() === '') return; // تجاهل الصف بدون اسم طالب
+          if (String(studentName).trim().includes('معلم المادة')) return; // تجاهل الصف الذي يحمل معلم المادة
+          // الحوار: ابحث عن 4 أعمدة للحوار
+          let dialogSum = 0;
+          for(let i=1;i<=4;i++){
+            let val = row[`الحوار ${i}`] ?? row[`الحوار${i}`] ?? row[`الحوار_${i}`] ?? 0;
+            dialogSum += parseFloat(val)||0;
+          }
+          // الأسئلة القصيرة: 4 أعمدة
+          let shortqSum = 0;
+          for(let i=1;i<=4;i++){
+            let val = row[`الأسئلة القصيرة ${i}`] ?? row[`الأسئلة القصيرة${i}`] ?? row[`الأسئلة القصيرة_${i}`] ?? 0;
+            shortqSum += parseFloat(val)||0;
+          }
+          // العملية: 3 أعمدة
+          let practicalSum = 0;
+          for(let i=1;i<=3;i++){
+            let val = row[`العملية ${i}`] ?? row[`العملية${i}`] ?? row[`العملية_${i}`] ?? 0;
+            practicalSum += parseFloat(val)||0;
+          }
+          // المشروع: عمود واحد
+          let projectVal = row['المشروع'] ?? row['درجة المشروع'] ?? row['المشروع النهائي'] ?? 0;
+          projectVal = parseFloat(projectVal)||0;
+          // الدرجة الكلية
+          let total = dialogSum + shortqSum + practicalSum + projectVal;
+          // صف الجدول
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${studentName}</td><td>${dialogSum}</td><td>${shortqSum}</td><td>${practicalSum}</td><td>${projectVal}</td><td>${total}</td>`;
+          tbody.appendChild(tr);
+        });
+        return;
+      }
+      // باقي النطاقات: عرض عادي
       headerRow.innerHTML = (headers||[]).map(h=>`<th>${h ?? ''}</th>`).join('');
       tbody.innerHTML = '';
       (data||[]).forEach(row=>{
+        const studentName = row['اسم الطالب']||row['الطالب']||'';
+  if (!studentName || String(studentName).trim() === '') return; // تجاهل الصف بدون اسم طالب
+  if (String(studentName).trim().includes('معلم المادة')) return; // تجاهل الصف الذي يحمل معلم المادة
         const tr = document.createElement('tr');
         tr.innerHTML = (headers||[]).map(h=>`<td>${(row && row[h] !== undefined && row[h] !== null) ? row[h] : ''}</td>`).join('');
         tbody.appendChild(tr);
