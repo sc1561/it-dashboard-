@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>لوحة تقارير ودرجات — تقنية المعلومات</title>
+
+    <!-- خط Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet" />
+
+    <!-- ورقة الأنماط -->
+    <link rel="stylesheet" href="assets/styles.css" />
+
+    <!-- مكتبات الطرف الثالث (CDN) -->
+    <!-- SheetJS لقراءة/كتابة Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.19.3/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF + AutoTable لتصدير PDF -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">IT</div>
+        <div>
+          <h1>لوحة التقارير والدرجات</h1>
+          <p class="subtitle">مادة تقنية المعلومات — عرض البيانات فقط</p>
+        </div>
+      </div>
+
+      <div class="ro-badge" title="النظام لا يخزن ملفاتك، كل المعالجة تتم محليًا في المتصفح.">
+        للعرض فقط
+      </div>
+    </header>
+
+    <!-- شريط تعليمات سياسة التحرير -->
+    <section class="notice">
+      <strong>كيف أعدّل الدرجات؟</strong>
+      <span>النظام <u>لا</u> يحرّر البيانات داخليًا. لتحرير الدرجات: حدّث ملف Excel الأصلي (على Google Drive/OneDrive) ثم <b>أعد رفعه هنا</b>.</span>
+    </section>
+
+    <!-- منطقة الرفع والتحكم -->
+    <main class="container">
+      <section class="uploader" id="uploader">
+        <label for="fileInput" class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
+          <div class="dz-icon">⬆️</div>
+          <div>
+            <div class="dz-title">اسحب ملف Excel وأفلته هنا</div>
+            <div class="dz-sub">أو انقر للاختيار (.xlsx / .xls)</div>
+          </div>
+        </label>
+        <div class="tips">
+          <ul>
+            <li>لا يتم رفع الملف إلى خادم — تتم القراءة محليًا في المتصفح.</li>
+            <li>يدعم تعدد أوراق العمل داخل الملف.</li>
+            <li>تأكد من وجود أعمدة مثل: <code>الصف</code>، <code>الشعبة</code>، <code>الاسم</code>، <code>الدرجة</code>.</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- شريط أدوات -->
+      <section class="toolbar" aria-label="أدوات التحكم">
+        <div class="filters">
+          <label>
+            الصف
+            <select id="gradeFilter">
+              <option value="">الكل</option>
+            </select>
+          </label>
+          <label>
+            الشعبة
+            <select id="sectionFilter">
+              <option value="">الكل</option>
+            </select>
+          </label>
+          <label>
+            ورقة العمل
+            <select id="sheetFilter">
+              <option value="">(أول ورقة)</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="search">
+          <input id="searchInput" type="search" placeholder="بحث بالاسم..." autocomplete="off" />
+        </div>
+
+        <div class="actions">
+          <button id="shareBtn" class="ghost" title="مشاركة ملخص النتائج">مشاركة</button>
+          <div class="split-btn">
+            <button id="exportPdfBtn">PDF</button>
+            <button id="exportXlsxBtn">Excel</button>
+            <button id="printBtn">طباعة</button>
+          </div>
+          <button id="resetBtn" class="ghost">تصفير الفلاتر</button>
+        </div>
+      </section>
+
+      <!-- عدّاد النتائج -->
+      <div class="stats" id="stats">لم يتم تحميل بيانات بعد</div>
+
+      <!-- الجدول -->
+      <section class="table-wrap">
+        <div class="table-scroll">
+          <table id="dataTable" class="data-table">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- مؤشر تحميل -->
+    <div id="loader" class="loader" aria-hidden="true">
+      <div class="spinner"></div>
+      <div>جاري المعالجة…</div>
+    </div>
+
+    <footer class="app-footer">
+      <span>© لوحة تقارير تقنية المعلومات — عرض فقط</span>
+      <a href="#" id="readmeLink">تعليمات التشغيل (README)</a>
+    </footer>
+
+    <!-- سكربت التطبيق -->
+    <script src="assets/app.js"></script>
+  </body>
+</html>
