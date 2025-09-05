@@ -104,13 +104,26 @@
     </script>
   </body>
 </html>
-</html>
-<!doctype html>
-<html lang="ar" dir="rtl">
+<!doctype html> 
+<html lang="ar" dir="rtl"> 
+  <head> 
   <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>لوحة تقارير ودرجات — تقنية المعلومات</title>
+    <style>
+      body { font-family: 'Cairo', Arial, sans-serif; background: #f7f7f7; margin:0; }
+      .container { max-width: 900px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 32px; }
+      h1 { font-size: 2rem; margin-bottom: 16px; }
+      .uploader { border: 2px dashed #2196f3; padding: 32px; text-align: center; border-radius: 8px; background: #e3f2fd; cursor: pointer; margin-bottom: 24px; }
+      .uploader input { display: none; }
+      .table-wrap { overflow-x: auto; margin-top: 24px; }
+      table { border-collapse: collapse; width: 100%; background: #fff; }
+      th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+      th { background: #2196f3; color: #fff; cursor: pointer; }
+      tr:nth-child(even) { background: #f1f1f1; }
+      .stats { margin: 16px 0; color: #2196f3; font-weight: bold; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.20.2/dist/xlsx.full.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.20.2/dist/xlsx.full.min.js"></script>
   <style>
