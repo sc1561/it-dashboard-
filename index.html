@@ -59,7 +59,7 @@
   <tbody></tbody>
 </table>
 
-<div class="footer">تصميم الأستاذ أحمد الضامري</div>
+
 
 <div id="popup" class="popup">
   <p>اختر طريقة التصدير:</p>
@@ -161,25 +161,63 @@ function showColumnsMap(wb, sheetName) {
   dynamicHeaders = headers;
 }
 
+
+// تعريف الأعمدة المطلوبة لكل استمارة وصف
+const sheetColumnsMap = {
+  // الصفوف 1-4
+  "استمارة العام الدراسي": ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأسئلة القصيرة", "مجموع درجة الأنشطة العملية", "مجموع درجة المشروع", "درجة الطالب الكلية"],
+  "السجل السنوي": ["اسم الطالب", "نتيجة الفصل الدراسي الأول", "درجة نهاية العام", "المستوى"],
+  // الصفوف 5-6
+  "الفصل الأول": ["اسم الطالب", "مجموع درجات الحوار", "مجموع درجات الأسئلة القصيرة", "مجموع الأنشطة العملية", "مجموع درجة المشروع", "المجموع الكلي", "المستوى"],
+  "الفصل الثاني": ["اسم الطالب", "مجموع درجات الحوار", "مجموع درجات الأسئلة القصيرة", "مجموع الأنشطة العملية", "مجموع درجة المشروع", "المجموع الكلي", "المستوى"],
+  "استمارة المشروع المقترح الأول": ["اسم الطالب", "مجموع تطبيق العمليات", "مجموع حل المشكلات", "المجموع الكلي"],
+  // الصفوف 7-10
+  "الفصل الأول 7-10": ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأنشطة العملية الأول", "مجموع درجة الأنشطة العملية الثاني", "المجموع", "مجموع درجة الاختبار القصير", "مجموع درجة المشروع", "الدرجة الكلية", "المستوى"],
+  "الفصل الثاني 7-10": ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأنشطة العملية الأول", "مجموع درجة الأنشطة العملية الثاني", "المجموع", "مجموع درجة الاختبار القصير", "مجموع درجة المشروع", "الدرجة الكلية", "المستوى"],
+  "استمارة المشروع المقترح الأول 7-10": ["اسم الطالب", "مجموع تطبيق العمليات", "مجموع حل المشكلات", "المجموع الكلي"],
+  // الصفوف 11-12
+  "الفصل الأول 11-12": ["اسم الطالب", "مجموع الأنشطة العملية الأول", "مجموع الأنشطة العملية الثاني", "المجموع", "مجموع الاختبار العملي", "مجموع الاختبار القصير", "مجموع المشروع", "درجة نهاية الفصل الدراسي", "المجموع الكلي", "المستوى"],
+  "الفصل الثاني 11-12": ["اسم الطالب", "مجموع الأنشطة العملية الأول", "مجموع الأنشطة العملية الثاني", "المجموع", "مجموع الاختبار العملي", "مجموع الاختبار القصير", "مجموع المشروع", "درجة نهاية الفصل الدراسي", "المجموع الكلي", "المستوى"],
+  "سجل سنوي 11-12": ["اسم الطالب", "درجة الفصل الأول", "المستوى الفصل الأول", "درجة الفصل الثاني", "المستوى الفصل الثاني", "درجة نهاية العام", "المستوى نهاية العام"]
+};
+
+function getSheetColumns(sheetName) {
+  // محاولة مطابقة اسم الورقة مع الخريطة
+  if (sheetColumnsMap[sheetName]) return sheetColumnsMap[sheetName];
+  // مطابقة جزئية للصفوف 7-10 و 11-12
+  if (sheetName.includes("الفصل الأول") && sheetName.includes("7-10")) return sheetColumnsMap["الفصل الأول 7-10"];
+  if (sheetName.includes("الفصل الثاني") && sheetName.includes("7-10")) return sheetColumnsMap["الفصل الثاني 7-10"];
+  if (sheetName.includes("استمارة المشروع المقترح الأول") && sheetName.includes("7-10")) return sheetColumnsMap["استمارة المشروع المقترح الأول 7-10"];
+  if (sheetName.includes("الفصل الأول") && sheetName.includes("11-12")) return sheetColumnsMap["الفصل الأول 11-12"];
+  if (sheetName.includes("الفصل الثاني") && sheetName.includes("11-12")) return sheetColumnsMap["الفصل الثاني 11-12"];
+  if (sheetName.includes("سجل سنوي") && sheetName.includes("11-12")) return sheetColumnsMap["سجل سنوي 11-12"];
+  // إذا لم توجد مطابقة، عرض كل الأعمدة
+  return null;
+}
+
 function loadSelectedSheets() {
   const selectedWorkbook = workbooks[parseInt(classSelect.value)];
   const selectedSheets = Array.from(sheetSelect.selectedOptions).map(opt => opt.value);
   if (selectedSheets.length === 0) return alert("يرجى اختيار ورقة واحدة على الأقل");
 
-  // جمع بيانات كل ورقة بشكل مستقل
   let outputs = [];
   selectedSheets.forEach(sheetName => {
     const sheet = selectedWorkbook.workbook.Sheets[sheetName];
     const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
     const headers = json[0] || [];
+    let requiredColumns = getSheetColumns(sheetName);
+    // إذا لم توجد مطابقة، عرض كل الأعمدة
+    if (!requiredColumns) requiredColumns = headers;
     const rows = json.slice(1).map(row => {
       let entry = {};
-      headers.forEach((header, idx) => {
-        entry[header] = row[idx];
+      requiredColumns.forEach((header, idx) => {
+        // ابحث عن العمود في headers الأصلية
+        const colIdx = headers.indexOf(header);
+        entry[header] = colIdx !== -1 ? row[colIdx] : "";
       });
       return entry;
     }).filter(entry => Object.values(entry).some(v => v !== undefined && v !== null && v !== ""));
-    outputs.push({ sheetName, headers, rows });
+    outputs.push({ sheetName, headers: requiredColumns, rows });
   });
 
   renderSheetsTabs(outputs);
