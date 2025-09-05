@@ -1,508 +1,310 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>التقارير في مادة تقنية المعلومات</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>التقارير في مادة تقنية المعلومات — مخصصة</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f3f4f6, #e0f7fa); padding: 20px; direction: rtl; color: #333; }
-    h1 { text-align: center; font-size: 28px; color: #006064; margin-bottom: 20px; }
-    label, select, input, button { font-size: 18px; margin: 5px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #fff; }
-    th, td { border: 1px solid #ccc; padding: 12px; text-align: center; }
-    th { background-color: #26a69a; color: white; }
+    h1 { text-align: center; font-size: 28px; color: #006064; margin-bottom: 16px; }
+    .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    label, select, input, button { font-size: 16px; }
+    button { padding: 8px 14px; border: 0; background:#26a69a; color:#fff; border-radius:8px; cursor:pointer }
+    button:hover { opacity:.9 }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; background-color: #fff; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    th { background-color: #26a69a; color: white; position: sticky; top:0; }
     tr:nth-child(even) { background-color: #f2f2f2; }
-    .footer { margin-top: 30px; font-size: 16px; text-align: center; color: #666; }
-    .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border: 2px solid #26a69a; border-radius: 10px; padding: 20px; box-shadow: 0px 0px 10px rgba(0,0,0,0.25); display: none; z-index: 1000; }
-    .popup button { margin: 10px; padding: 10px 20px; font-size: 18px; }
-    .file-card { border: 1px solid #26a69a; border-radius: 8px; padding: 16px; margin-top: 20px; background-color: #fff; }
-    .file-title { font-size: 20px; font-weight: bold; color: #006064; }
-    .tabs { margin-top: 10px; }
-    .tab-btn { background: #26a69a; color: white; border: none; padding: 10px 15px; margin-right: 5px; border-radius: 5px 5px 0 0; cursor: pointer; }
-    .tab-btn.active { background: #00796b; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .toolbar { margin: 10px 0; }
-    .table-wrap { max-height: 400px; overflow-y: auto; }
+    .footer { margin-top: 24px; font-size: 14px; text-align: center; color: #666; }
+    .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border: 2px solid #26a69a; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,.25); display: none; z-index: 1000; }
+    .popup button { margin: 8px; }
+    .pill { background:#e0f2f1; color:#006064; padding:4px 10px; border-radius:999px; font-size:12px; }
+    .note { font-size:12px; color:#555 }
   </style>
 </head>
 <body>
+  <h1>التقارير في مادة تقنية المعلومات</h1>
 
-<h1>التقارير في مادة تقنية المعلومات</h1>
+  <div class="bar">
+    <label for="fileInput">اختر ملفات الإكسل:</label>
+    <input type="file" id="fileInput" accept=".xlsx" multiple />
+    <label for="classSelect">اختر الملف:</label>
+    <select id="classSelect"></select>
+    <label for="sheetSelect">اختر ورقة/أوراق:</label>
+    <select id="sheetSelect" multiple></select>
+    <button onclick="loadSelectedSheets()">تحميل الأوراق المختارة</button>
+    <button onclick="showExportOptions()">خيارات التصدير والطباعة</button>
+    <label for="search">ابحث باسم الطالب:</label>
+    <input type="text" id="search" placeholder="أدخل الاسم..." />
+    <span id="bandBadge" class="pill" title="النطاق المكتشف"></span>
+  </div>
+  <div class="note">ملاحظة: يُفضّل فتح الملف عبر خادم محلي أو استضافة (بدلاً من file://) لضمان عمل القراءة.</div>
 
-<div>
-  <label for="fileInput">اختر ملفات الإكسل:</label>
-  <input type="file" id="fileInput" accept=".xlsx" multiple />
-  <br />
-  <label for="classSelect">اختر الصف أو الشعبة:</label>
-  <select id="classSelect"></select>
-  <br />
-  <label for="sheetSelect">اختر ورقة أو أوراق العمل:</label>
-  <select id="sheetSelect" multiple></select>
-  <br />
-  <button onclick="loadSelectedSheets()">تحميل الأوراق المختارة</button>
-  <button onclick="showExportOptions()">خيارات التصدير والطباعة</button>
-  <br />
-  <label for="search">ابحث باسم الطالب:</label>
-  <input type="text" id="search" placeholder="أدخل الاسم..." />
-</div>
+  <table id="reportTable">
+    <thead><tr id="headerRow"></tr></thead>
+    <tbody></tbody>
+  </table>
 
-  <!-- خريطة الأعمدة الديناميكية -->
-  <div id="columnsMap" style="margin-top:30px; display:none; background:#fff; border:1px solid #26a69a; border-radius:8px; padding:16px;">
-    <h2 style="color:#006064; font-size:22px;">خريطة الأعمدة في ملف Excel</h2>
-    <div id="columnsList"></div>
+  <div class="footer">يدعم نطاقات: 1-4، 5-6، 7-10، 11-12 والسجل السنوي • بحث وتصدير PDF/Excel</div>
+
+  <div id="popup" class="popup">
+    <p>اختر طريقة التصدير:</p>
+    <label><input type="radio" name="exportType" value="all" checked> تصدير كل البيانات</label><br>
+    <label><input type="radio" name="exportType" value="filtered"> تصدير المعروض فقط</label><br>
+    <button onclick="previewBeforeExport()">معاينة قبل التصدير</button>
+    <button onclick="printReport()">طباعة</button>
+    <button onclick="downloadPDF()">تحميل PDF</button>
+    <button onclick="downloadExcel()">تحميل Excel</button>
+    <button onclick="closePopup()">إلغاء</button>
   </div>
 
-<table id="reportTable">
-  <thead><tr id="headerRow"></tr></thead>
-  <tbody></tbody>
-</table>
+  <!-- مكتبات -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
+  <script>
+    // عناصر DOM
+    const fileInput  = document.getElementById('fileInput');
+    const classSelect= document.getElementById('classSelect');
+    const sheetSelect= document.getElementById('sheetSelect');
+    const searchInput= document.getElementById('search');
+    const headerRow  = document.getElementById('headerRow');
+    const tbody      = document.querySelector('#reportTable tbody');
+    const popup      = document.getElementById('popup');
+    const bandBadge  = document.getElementById('bandBadge');
 
+    // حالة
+    let workbooks = [];
+    let allData = [];
+    let dynamicHeaders = [];
+    let detectedBand = ''; // '1-4','5-6','7-10','11-12','annual','generic'
 
-<div id="popup" class="popup">
-  <p>اختر طريقة التصدير:</p>
-  <label><input type="radio" name="exportType" value="all" checked> تصدير كل البيانات</label><br>
-  <label><input type="radio" name="exportType" value="filtered"> تصدير المعروض فقط</label><br>
-  <button onclick="previewBeforeExport()">معاينة قبل التصدير</button>
-  <button onclick="printReport()">طباعة</button>
-  <button onclick="downloadPDF()">تحميل PDF</button>
-  <button onclick="downloadExcel()">تحميل Excel</button>
-  <button onclick="closePopup()">إلغاء</button>
-</div>
+    // تطبيع عربي مبسط
+    const normalize = (s) => (s||'').toString().trim()
+      .replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/\s+/g,' ')
+      .toLowerCase();
 
-<!-- مكتبات JavaScript -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-<script>
-const fileInput = document.getElementById('fileInput');
-const classSelect = document.getElementById('classSelect');
-const sheetSelect = document.getElementById('sheetSelect');
-const searchInput = document.getElementById('search');
-const headerRow = document.getElementById('headerRow');
-const tbody = document.querySelector('#reportTable tbody');
-const popup = document.getElementById('popup');
-
-let workbooks = [];
-let allData = [];
-let reportType = 'regular';
-let dynamicHeaders = [];
-
-fileInput.addEventListener('change', async (e) => {
-  const files = Array.from(e.target.files);
-  workbooks = [];
-  classSelect.innerHTML = '';
-  for (const file of files) {
-    const data = await file.arrayBuffer();
-    const workbook = XLSX.read(data, { type: 'array' });
-    workbooks.push({ workbook, filename: file.name });
-    const option = document.createElement('option');
-    option.value = workbooks.length - 1;
-    option.textContent = file.name;
-    classSelect.appendChild(option);
-  }
-  if (workbooks.length > 0) populateSheets(0);
-});
-
-classSelect.addEventListener('change', () => {
-  populateSheets(parseInt(classSelect.value));
-});
-
-searchInput.addEventListener('input', () => {
-  const term = searchInput.value.trim();
-  const filtered = allData.filter(row => row.name && row.name.includes(term));
-  if (reportType === 'annual') renderAnnualTable(filtered);
-  else renderRegularTable(filtered);
-});
-
-function populateSheets(classIndex) {
-  const wb = workbooks[classIndex].workbook;
-  sheetSelect.innerHTML = '';
-  wb.SheetNames.forEach(name => {
-    const option = document.createElement('option');
-    option.value = name;
-    option.textContent = name;
-    sheetSelect.appendChild(option);
-  });
-
-  // عرض خريطة الأعمدة للورقة الأولى تلقائياً
-  if (wb.SheetNames.length > 0) {
-    showColumnsMap(wb, wb.SheetNames[0]);
-  }
-}
-
-// عند تغيير الورقة المختارة، عرض خريطة الأعمدة
-sheetSelect.addEventListener('change', () => {
-  const classIndex = parseInt(classSelect.value);
-  const wb = workbooks[classIndex].workbook;
-  const sheetName = sheetSelect.value;
-  showColumnsMap(wb, sheetName);
-});
-
-function showColumnsMap(wb, sheetName) {
-  const sheet = wb.Sheets[sheetName];
-  if (!sheet) return;
-  const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-  const headers = json[0] || [];
-  const columnsList = document.getElementById('columnsList');
-  const columnsMapDiv = document.getElementById('columnsMap');
-  if (headers.length === 0) {
-    columnsList.innerHTML = '<span style="color:red">لا توجد رؤوس أعمدة في هذه الورقة.</span>';
-    columnsMapDiv.style.display = 'block';
-    dynamicHeaders = [];
-    return;
-  }
-  columnsList.innerHTML = '<ul style="list-style:disc; padding-right:20px;">' +
-    headers.map(h => `<li style='margin:6px 0; font-size:17px;'>${h}</li>`).join('') + '</ul>';
-  columnsMapDiv.style.display = 'block';
-  // حفظ الأعمدة الديناميكية لاستخدامها في عرض الجدول
-  dynamicHeaders = headers;
-}
-
-
-// تعريف الأعمدة المطلوبة لكل استمارة وصف
-const sheetColumnsMap = {
-  // الصفوف 1-4
-  "استمارة العام الدراسي": ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأسئلة القصيرة", "مجموع درجة الأنشطة العملية", "مجموع درجة المشروع", "درجة الطالب الكلية"],
-  "السجل السنوي": ["اسم الطالب", "نتيجة الفصل الدراسي الأول", "درجة نهاية العام", "المستوى"],
-  // الصفوف 5-6
-  "الفصل الأول": ["اسم الطالب", "مجموع درجات الحوار", "مجموع درجات الأسئلة القصيرة", "مجموع الأنشطة العملية", "مجموع درجة المشروع", "المجموع الكلي", "المستوى"],
-  "الفصل الثاني": ["اسم الطالب", "مجموع درجات الحوار", "مجموع درجات الأسئلة القصيرة", "مجموع الأنشطة العملية", "مجموع درجة المشروع", "المجموع الكلي", "المستوى"],
-  "استمارة المشروع المقترح الأول": ["اسم الطالب", "مجموع تطبيق العمليات", "مجموع حل المشكلات", "المجموع الكلي"],
-  // الصفوف 7-10
-  "الفصل الأول 7-10": ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأنشطة العملية الأول", "مجموع درجة الأنشطة العملية الثاني", "المجموع", "مجموع درجة الاختبار القصير", "مجموع درجة المشروع", "الدرجة الكلية", "المستوى"],
-  "الفصل الثاني 7-10": ["اسم الطالب", "مجموع درجة الحوار", "مجموع درجة الأنشطة العملية الأول", "مجموع درجة الأنشطة العملية الثاني", "المجموع", "مجموع درجة الاختبار القصير", "مجموع درجة المشروع", "الدرجة الكلية", "المستوى"],
-  "استمارة المشروع المقترح الأول 7-10": ["اسم الطالب", "مجموع تطبيق العمليات", "مجموع حل المشكلات", "المجموع الكلي"],
-  // الصفوف 11-12
-  "الفصل الأول 11-12": ["اسم الطالب", "مجموع الأنشطة العملية الأول", "مجموع الأنشطة العملية الثاني", "المجموع", "مجموع الاختبار العملي", "مجموع الاختبار القصير", "مجموع المشروع", "درجة نهاية الفصل الدراسي", "المجموع الكلي", "المستوى"],
-  "الفصل الثاني 11-12": ["اسم الطالب", "مجموع الأنشطة العملية الأول", "مجموع الأنشطة العملية الثاني", "المجموع", "مجموع الاختبار العملي", "مجموع الاختبار القصير", "مجموع المشروع", "درجة نهاية الفصل الدراسي", "المجموع الكلي", "المستوى"],
-  "سجل سنوي 11-12": ["اسم الطالب", "درجة الفصل الأول", "المستوى الفصل الأول", "درجة الفصل الثاني", "المستوى الفصل الثاني", "درجة نهاية العام", "المستوى نهاية العام"]
-};
-
-function getSheetColumns(sheetName) {
-  // محاولة مطابقة اسم الورقة مع الخريطة
-  if (sheetColumnsMap[sheetName]) return sheetColumnsMap[sheetName];
-  // مطابقة جزئية للصفوف 7-10 و 11-12
-  if (sheetName.includes("الفصل الأول") && sheetName.includes("7-10")) return sheetColumnsMap["الفصل الأول 7-10"];
-  if (sheetName.includes("الفصل الثاني") && sheetName.includes("7-10")) return sheetColumnsMap["الفصل الثاني 7-10"];
-  if (sheetName.includes("استمارة المشروع المقترح الأول") && sheetName.includes("7-10")) return sheetColumnsMap["استمارة المشروع المقترح الأول 7-10"];
-  if (sheetName.includes("الفصل الأول") && sheetName.includes("11-12")) return sheetColumnsMap["الفصل الأول 11-12"];
-  if (sheetName.includes("الفصل الثاني") && sheetName.includes("11-12")) return sheetColumnsMap["الفصل الثاني 11-12"];
-  if (sheetName.includes("سجل سنوي") && sheetName.includes("11-12")) return sheetColumnsMap["سجل سنوي 11-12"];
-  // إذا لم توجد مطابقة، عرض كل الأعمدة
-  return null;
-}
-
-
-function loadSelectedSheets() {
-  const selectedWorkbook = workbooks[parseInt(classSelect.value)];
-  const selectedSheets = Array.from(sheetSelect.selectedOptions).map(opt => opt.value);
-  if (selectedSheets.length === 0) return alert("يرجى اختيار ورقة واحدة على الأقل");
-
-  let outputs = [];
-  selectedSheets.forEach(sheetName => {
-    const sheet = selectedWorkbook.workbook.Sheets[sheetName];
-    const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    const headers = json[0] || [];
-    const rows = json.slice(1).map(row => {
-      let entry = {};
-      headers.forEach((header, idx) => {
-        entry[header] = row[idx];
-      });
-      return entry;
-    }).filter(entry => Object.values(entry).some(v => v !== undefined && v !== null && v !== ""));
-    outputs.push({ sheetName, headers, rows });
-  });
-
-  renderSheetsTabs(outputs);
-}
-
-function renderAnnualTable(data) {
-  headerRow.innerHTML = `<th>اسم الطالب</th><th>درجة الفصل الأول</th><th>مستوى الفصل الأول</th><th>درجة الفصل الثاني</th><th>مستوى الفصل الثاني</th><th>نهاية العام</th><th>المستوى العام</th>`;
-  tbody.innerHTML = '';
-  data.forEach(row => {
-    const finalGrade = parseFloat(row.finalGrade);
-    let generalLevel = '';
-    if (finalGrade >= 90) generalLevel = 'أ';
-    else if (finalGrade >= 80) generalLevel = 'ب';
-    else if (finalGrade >= 65) generalLevel = 'ج';
-    else if (finalGrade >= 50) generalLevel = 'د';
-    else generalLevel = 'هـ';
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${row.name}</td><td>${row.term1Grade}</td><td>${row.term1Level}</td><td>${row.term2Grade}</td><td>${row.term2Level}</td><td>${row.finalGrade}</td><td>${generalLevel}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-
-
-
-// عرض كل ورقة في تبويب منفصل مع جدول خاص بها وتنسيق احترافي بدون أزرار إضافية
-function renderSheetsTabs(outputs) {
-  const container = document.getElementById('reportTable');
-  container.innerHTML = '';
-  // إنشاء التبويبات
-  const tabs = document.createElement('div');
-  tabs.className = 'tabs';
-  const tabContents = [];
-  outputs.forEach((out, idx) => {
-    const tabBtn = document.createElement('button');
-    tabBtn.className = 'tab-btn';
-    tabBtn.type = 'button';
-    tabBtn.textContent = out.sheetName;
-    tabs.appendChild(tabBtn);
-
-    const tabContent = document.createElement('div');
-    tabContent.className = 'tab-content';
-    tabContent.id = 'tab-content-' + idx;
-
-    // عنوان الورقة
-    const sheetTitle = document.createElement('div');
-    sheetTitle.className = 'sheet-title';
-    sheetTitle.style = 'font-size:22px; color:#00796b; margin-bottom:10px; font-weight:bold;';
-    sheetTitle.textContent = out.sheetName;
-    tabContent.appendChild(sheetTitle);
-
-    // الجدول
-    const tableWrap = document.createElement('div');
-    tableWrap.className = 'table-wrap';
-    const table = document.createElement('table');
-    table.setAttribute('tabindex', '0');
-    const thead = document.createElement('thead');
-    const trHead = document.createElement('tr');
-    out.headers.forEach(col => {
-      const th = document.createElement('th');
-      th.textContent = col;
-      trHead.appendChild(th);
-    });
-    thead.appendChild(trHead);
-    table.appendChild(thead);
-    const tbodyEl = document.createElement('tbody');
-    out.rows.forEach(row => {
-      const tr = document.createElement('tr');
-      out.headers.forEach(col => {
-        const td = document.createElement('td');
-        td.textContent = row[col] !== undefined ? row[col] : '';
-        tr.appendChild(td);
-      });
-      tbodyEl.appendChild(tr);
-    });
-    table.appendChild(tbodyEl);
-    tableWrap.appendChild(table);
-    tabContent.appendChild(tableWrap);
-
-    tabContents.push(tabContent);
-    container.appendChild(tabContent);
-  });
-  container.parentNode.insertBefore(tabs, container);
-
-  // تفعيل أول تبويب
-  function activateTab(idx) {
-    tabs.querySelectorAll('.tab-btn').forEach((btn, i) => {
-      btn.classList.toggle('active', i === idx);
-      tabContents[i].classList.toggle('active', i === idx);
-    });
-    tabContents[idx].querySelector('table').focus();
-  }
-  tabs.querySelectorAll('.tab-btn').forEach((btn, i) => {
-    btn.onclick = () => activateTab(i);
-    btn.onkeydown = e => {
-      if (e.key === 'ArrowLeft') activateTab((i - 1 + tabContents.length) % tabContents.length);
-      if (e.key === 'ArrowRight') activateTab((i + 1) % tabContents.length);
-      if (e.key === 'Enter' || e.key === ' ') activateTab(i);
+    // مرادفات للأعمدة
+    const synonyms = {
+      name:    ['اسم الطالب','الطالب','الاسم','اسم'],
+      dialog:  ['مجموع درجه الحوار','مجموع درجات الحوار','درجة الحوار','الحوار'],
+      shortq:  ['مجموع درجه الاسئله القصيره','مجموع درجات الاسئله القصيره','الاسئله القصيره','الاسئلة القصيرة'],
+      practical:['مجموع درجه الانشطه العمليه','مجموع درجات الانشطه العمليه','الانشطه العمليه','النشاط العملي','النشاط العملي 1','النشاط العملي 2','العملي'],
+      project: ['مجموع درجه المشروع','درجه المشروع','المشروع'],
+      total:   ['درجه الطالب الكليه','المجموع الكلي','المجموع','المجموع الكلي للدرجات'],
+      level:   ['المستوى','المستوى العام'],
+      t1:      ['نتيجه الفصل الدراسي الاول','درجه الفصل الاول','الفصل الدراسي الاول'],
+      t2:      ['نتيجه الفصل الدراسي الثاني','درجه الفصل الثاني','الفصل الدراسي الثاني'],
+      final:   ['درجه نهايه العام','نهايه العام','المعدل النهائي']
     };
-  });
-  activateTab(0);
-}
 
-function showExportOptions() {
-  popup.style.display = 'block';
-}
-
-function closePopup() {
-  popup.style.display = 'none';
-}
-
-function previewBeforeExport() {
-  closePopup();
-  window.print();
-}
-
-function printReport() {
-  closePopup();
-  window.print();
-}
-
-function downloadPDF() {
-  closePopup();
-  const element = document.getElementById('reportTable');
-  const opt = {
-    margin: 0.5,
-    filename: 'تقرير_تقنية_المعلومات.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-  };
-  html2pdf().set(opt).from(element).save();
-}
-
-function downloadExcel() {
-  closePopup();
-  const wb = XLSX.utils.book_new();
-  const ws_data = [
-    [...headerRow.querySelectorAll('th')].map(th => th.innerText),
-    ...[...tbody.querySelectorAll('tr')].map(tr => [...tr.querySelectorAll('td')].map(td => td.innerText))
-  ];
-  const ws = XLSX.utils.aoa_to_sheet(ws_data);
-  XLSX.utils.book_append_sheet(wb, ws, 'التقرير');
-  XLSX.writeFile(wb, 'تقرير_تقنية_المعلومات.xlsx');
-}
-
-// استخراج جميع الأعمدة من الورقة وعرضها
-function extractAllColumns(workbook, sheetName) {
-  const sheet = workbook.Sheets[sheetName];
-  if (!sheet) return { rows: [], columns: [] };
-  let data = XLSX.utils.sheet_to_json(sheet, {defval: '', raw: false});
-  let columns = [];
-  if (data.length > 0) {
-    columns = Object.keys(data[0]);
-  }
-  let rows = data.map(row => {
-    let obj = {};
-    columns.forEach(col => {
-      obj[col] = row[col];
+    // فحص جاهزية المكتبات عند التحميل
+    window.addEventListener('load', () => {
+      if (!window.XLSX) {
+        alert("تعذّر تحميل مكتبة XLSX. تأكد من اتصال الإنترنت أو استبدل الروابط بروابط محلية.");
+      }
     });
-    // تجاهل الصفوف الفارغة تماماً
-    let allEmpty = Object.values(obj).every(v => v === '' || v === null);
-    return allEmpty ? null : obj;
-  }).filter(Boolean);
-  return { rows, columns };
-}
 
-// عرض بطاقة ملف لجميع الأعمدة
-function renderFileCard(fileMeta, outputs) {
-  const container = document.getElementById('files-container');
-  const card = document.createElement('div');
-  card.className = 'file-card';
-  const title = document.createElement('div');
-  title.className = 'file-title';
-  title.textContent = fileMeta.name;
-  card.appendChild(title);
-
-  const tabs = document.createElement('div');
-  tabs.className = 'tabs';
-  const tabContents = [];
-  outputs.forEach((out, idx) => {
-    const tabBtn = document.createElement('button');
-    tabBtn.className = 'tab-btn';
-    tabBtn.type = 'button';
-    tabBtn.textContent = out.sheetName;
-    tabs.appendChild(tabBtn);
-
-    const tabContent = document.createElement('div');
-    tabContent.className = 'tab-content';
-    tabContent.id = 'tab-content-' + idx;
-
-    const sheetTitle = document.createElement('div');
-    sheetTitle.className = 'sheet-title';
-    sheetTitle.textContent = out.sheetName;
-    tabContent.appendChild(sheetTitle);
-
-    const toolbar = document.createElement('div');
-    toolbar.className = 'toolbar';
-    const csvBtn = document.createElement('button');
-    csvBtn.textContent = 'تنزيل CSV';
-    csvBtn.onclick = () => exportCSV(out.rows, out.columns, out.sheetName);
-    toolbar.appendChild(csvBtn);
-    const jsonBtn = document.createElement('button');
-    jsonBtn.textContent = 'تنزيل JSON';
-    jsonBtn.onclick = () => exportJSON(out.rows, out.sheetName);
-    toolbar.appendChild(jsonBtn);
-    const copyBtn = document.createElement('button');
-    copyBtn.textContent = 'نسخ إلى الحافظة';
-    copyBtn.onclick = () => copyTableToClipboard(tabContent.querySelector('table'));
-    toolbar.appendChild(copyBtn);
-    tabContent.appendChild(toolbar);
-
-    const tableWrap = document.createElement('div');
-    tableWrap.className = 'table-wrap';
-    const table = document.createElement('table');
-    table.setAttribute('tabindex', '0');
-    const thead = document.createElement('thead');
-    const trHead = document.createElement('tr');
-    out.columns.forEach(col => {
-      const th = document.createElement('th');
-      th.textContent = col;
-      trHead.appendChild(th);
-    });
-    thead.appendChild(trHead);
-    table.appendChild(thead);
-    const tbody = document.createElement('tbody');
-    out.rows.forEach(row => {
-      const tr = document.createElement('tr');
-      out.columns.forEach(col => {
-        const td = document.createElement('td');
-        td.textContent = row[col] !== undefined ? row[col] : '';
-        tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    tableWrap.appendChild(table);
-    tabContent.appendChild(tableWrap);
-
-    tabContents.push(tabContent);
-    card.appendChild(tabContent);
-  });
-  card.appendChild(tabs);
-
-  function activateTab(idx) {
-    tabs.querySelectorAll('.tab-btn').forEach((btn, i) => {
-      btn.classList.toggle('active', i === idx);
-      tabContents[i].classList.toggle('active', i === idx);
-    });
-    tabContents[idx].querySelector('table').focus();
-  }
-  tabs.querySelectorAll('.tab-btn').forEach((btn, i) => {
-    btn.onclick = () => activateTab(i);
-    btn.onkeydown = e => {
-      if (e.key === 'ArrowLeft') activateTab((i - 1 + tabContents.length) % tabContents.length);
-      if (e.key === 'ArrowRight') activateTab((i + 1) % tabContents.length);
-      if (e.key === 'Enter' || e.key === ' ') activateTab(i);
-    };
-  });
-  activateTab(0);
-
-  container.appendChild(card);
-}
-
-// معالجة رفع الملفات لجميع الأعمدة
-document.getElementById('file-input').addEventListener('change', async function(e) {
-  const files = Array.from(e.target.files);
-  if (!files.length) return;
-  for (const file of files) {
-    try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data, {type: 'array'});
-      let outputs = workbook.SheetNames.map(sheetName => {
-        let {rows, columns} = extractAllColumns(workbook, sheetName);
-        return {
-          sheetName,
-          columns,
-          rows
-        };
-      });
-      renderFileCard({name: file.name}, outputs);
-      showToast('تم معالجة الملف بنجاح: ' + file.name, 'success');
-    } catch (err) {
-      showToast('خطأ في معالجة الملف: ' + file.name, 'error');
+    // أدوات اختيار افتراضي
+    function ensureDefaultSelections() {
+      if (classSelect.options.length > 0 && !classSelect.value) {
+        classSelect.value = classSelect.options[0].value;
+      }
+      if (sheetSelect.options.length > 0 && sheetSelect.selectedOptions.length === 0) {
+        sheetSelect.options[0].selected = true;
+      }
     }
-  }
-  e.target.value = '';
-});
-</script>
 
+    // ربط الأحداث
+    fileInput.addEventListener('change', async (e) => {
+      try {
+        const files = Array.from(e.target.files);
+        workbooks = []; classSelect.innerHTML = ''; sheetSelect.innerHTML = '';
+        for (const file of files) {
+          const data = await file.arrayBuffer();
+          const workbook = XLSX.read(data, { type: 'array' });
+          workbooks.push({ workbook, filename: file.name });
+          const option = document.createElement('option');
+          option.value = workbooks.length - 1;
+          option.textContent = file.name;
+          classSelect.appendChild(option);
+        }
+        if (workbooks.length > 0) populateSheets(0);
+        ensureDefaultSelections();
+      } catch (err) {
+        console.error(err); alert("فشل تحميل الملف: " + err.message);
+      }
+    });
+
+    classSelect.addEventListener('change', () => {
+      populateSheets(parseInt(classSelect.value));
+      ensureDefaultSelections();
+    });
+
+    searchInput.addEventListener('input', () => {
+      const term = normalize(searchInput.value);
+      const nameKey = dynamicHeaders[0] || 'اسم الطالب';
+      const filtered = allData.filter(row => row[nameKey] && normalize(row[nameKey]).includes(term));
+      renderTable(filtered, dynamicHeaders);
+    });
+
+    // تعبئة الأوراق
+    function populateSheets(classIndex){
+      const wb = workbooks[classIndex]?.workbook;
+      sheetSelect.innerHTML = '';
+      if (!wb) return;
+      wb.SheetNames.forEach(name=>{
+        const opt = document.createElement('option');
+        opt.value = name; opt.textContent = name;
+        sheetSelect.appendChild(opt);
+      });
+    }
+
+    // أدوات مطابقة أعمدة
+    function headerIndex(headers, keys){
+      const nh = headers.map(h => normalize(h));
+      for (let i=0;i<nh.length;i++){
+        for (const k of keys){ if (nh[i] === normalize(k)) return i; }
+      }
+      for (let i=0;i<nh.length;i++){
+        for (const k of keys){
+          const t = normalize(k);
+          if (t && nh[i].includes(t)) return i;
+        }
+      }
+      return -1;
+    }
+
+    function detectBand(name, headers){
+      const title = (name||'') + ' ' + (headers||[]).join(' ');
+      if (/سجل|كشف|سنوي/.test(title)) return 'annual';
+      if (/(^|[^0-9])1-4([^0-9]|$)/.test(title))  return '1-4';
+      if (/(^|[^0-9])5-6([^0-9]|$)/.test(title))  return '5-6';
+      if (/(^|[^0-9])7-10([^0-9]|$)/.test(title)) return '7-10';
+      if (/(^|[^0-9])11-12([^0-9]|$)/.test(title))return '11-12';
+      return 'generic';
+    }
+
+    function preferredColumnsForBand(band){
+      if (band === 'annual'){
+        return [synonyms.name, synonyms.t1, synonyms.t2, synonyms.final, synonyms.level];
+      }
+      return [synonyms.name, synonyms.dialog, synonyms.shortq, synonyms.practical, synonyms.project, synonyms.total, synonyms.level];
+    }
+
+    function buildColumnMap(headers, band){
+      const order = preferredColumnsForBand(band);
+      const map = [];
+      order.forEach(group => {
+        const idx = headerIndex(headers, group);
+        if (idx >= 0) map.push({title: headers[idx] || group[0], idx});
+      });
+      // fallback: لو ما تعرّف ولا عمود، اعرض كل الأعمدة كما هي
+      if (map.length === 0) return headers.map((h,i)=>({title:h, idx:i}));
+      return map;
+    }
+
+    // التحميل الرئيسي
+    async function loadSelectedSheets() {
+      try {
+        const clsVal = classSelect.value;
+        if (clsVal === "" || clsVal === undefined) {
+          alert("رجاءً اختر ملف الإكسل أولًا من القائمة."); return;
+        }
+        const selectedWorkbook = workbooks[parseInt(clsVal)];
+        if (!selectedWorkbook || !selectedWorkbook.workbook) {
+          alert("لم أستطع الوصول للملف المحدد. أعد الاختيار أو ارفع الملف مرة أخرى."); return;
+        }
+        if (sheetSelect.selectedOptions.length === 0 && sheetSelect.options.length > 0) {
+          sheetSelect.options[0].selected = true;
+        }
+        const selectedSheets = Array.from(sheetSelect.selectedOptions).map(o=>o.value);
+        if (selectedSheets.length === 0) { alert("يرجى اختيار ورقة واحدة على الأقل."); return; }
+        if (!window.XLSX || !XLSX.utils || !XLSX.read) {
+          alert("مكتبة XLSX غير متوفرة. تأكد من تحميلها أو الاتصال بالإنترنت."); return;
+        }
+
+        allData = []; dynamicHeaders = []; detectedBand='';
+
+        selectedSheets.forEach(sheetName=>{
+          const sheet = selectedWorkbook.workbook.Sheets[sheetName];
+          if (!sheet) return;
+          const json = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows:false });
+          if (!json || json.length===0) return;
+
+          // تحديد صف العناوين: أول صف يحوي >=3 خلايا غير فارغة
+          let hdrIdx = 0;
+          for (let r=0; r<Math.min(10,json.length); r++){
+            const filled = (json[r]||[]).filter(x=>x!==null && x!==undefined && String(x).trim()!=='').length;
+            if (filled>=3){ hdrIdx=r; break; }
+          }
+          const headers = (json[hdrIdx]||[]).map(x=>x===undefined? '': String(x));
+          const band = detectBand(sheetName + ' ' + (selectedWorkbook.filename||''), headers);
+          detectedBand = detectedBand || band;
+
+          const colMap = buildColumnMap(headers, band);
+          const rows = json.slice(hdrIdx+1);
+
+          rows.forEach(r=>{
+            const obj = {};
+            colMap.forEach(({title, idx})=> obj[title] = r[idx]);
+            allData.push(obj);
+          });
+
+          dynamicHeaders = colMap.map(c=>c.title); // آخر خريطة
+        });
+
+        bandBadge.textContent = detectedBand ? ('النطاق: '+detectedBand) : 'النطاق: عام';
+
+        if (dynamicHeaders.length === 0 || allData.length === 0) {
+          alert("لم أجد بيانات صالحة في الأوراق المختارة. تأكد أن الصف الأول يحتوي عناوين واضحة.");
+          headerRow.innerHTML=''; tbody.innerHTML=''; return;
+        }
+
+        renderTable(allData, dynamicHeaders);
+
+      } catch (e) {
+        console.error(e);
+        alert("حدث خطأ أثناء التحميل:\n" + (e && e.message ? e.message : e));
+      }
+    }
+
+    // الرسم
+    function renderTable(data, headers){
+      headerRow.innerHTML = headers.map(h=>`<th>${h}</th>`).join('');
+      tbody.innerHTML = '';
+      data.forEach(row=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = headers.map(h=>`<td>${row[h] ?? ''}</td>`).join('');
+        tbody.appendChild(tr);
+      });
+    }
+
+    // نافذة التصدير
+    function showExportOptions(){ popup.style.display='block'; }
+    function closePopup(){ popup.style.display='none'; }
+    function previewBeforeExport(){ closePopup(); window.print(); }
+    function printReport(){ closePopup(); window.print(); }
+
+    function downloadPDF(){
+      closePopup();
+      const element = document.getElementById('reportTable');
+      const opt = { margin:.5, filename:'تقرير_تقنية_المعلومات.pdf',
+        image:{type:'jpeg',quality:.98}, html2canvas:{scale:2},
+        jsPDF:{unit:'in',format:'a4',orientation:'portrait'} };
+      html2pdf().set(opt).from(element).save();
+    }
+
+    function downloadExcel(){
+      closePopup();
+      const wb = XLSX.utils.book_new();
+      const headers = [...headerRow.querySelectorAll('th')].map(th=>th.innerText);
+      const rows = [...tbody.querySelectorAll('tr')].map(tr => [...tr.querySelectorAll('td')].map(td=>td.innerText));
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      XLSX.utils.book_append_sheet(wb, ws, 'التقرير');
+      XLSX.writeFile(wb, 'تقرير_تقنية_المعلومات.xlsx');
+    }
+  </script>
 </body>
 </html>
