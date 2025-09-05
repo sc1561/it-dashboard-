@@ -1,6 +1,225 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
-  <head>
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>التقارير في مادة تقنية المعلومات</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f3f4f6, #e0f7fa); padding: 20px; direction: rtl; color: #333; }
+    h1 { text-align: center; font-size: 28px; color: #006064; margin-bottom: 20px; }
+    label, select, input, button { font-size: 18px; margin: 5px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #fff; }
+    th, td { border: 1px solid #ccc; padding: 12px; text-align: center; }
+    th { background-color: #26a69a; color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+    .footer { margin-top: 30px; font-size: 16px; text-align: center; color: #666; }
+    .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border: 2px solid #26a69a; border-radius: 10px; padding: 20px; box-shadow: 0px 0px 10px rgba(0,0,0,0.25); display: none; z-index: 1000; }
+    .popup button { margin: 10px; padding: 10px 20px; font-size: 18px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.20.2/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+<h1>التقارير في مادة تقنية المعلومات</h1>
+<div>
+  <label for="fileInput">اختر ملفات الإكسل:</label>
+  <input type="file" id="fileInput" accept=".xlsx" multiple>
+  <br>
+  <label for="classSelect">اختر الصف أو الشعبة:</label>
+  <select id="classSelect"></select>
+  <br>
+  <label for="sheetSelect">اختر ورقة أو أوراق العمل:</label>
+  <select id="sheetSelect" multiple></select>
+  <br>
+  <button onclick="loadSelectedSheets()">تحميل الأوراق المختارة</button>
+  <button onclick="showExportOptions()">خيارات التصدير والطباعة</button>
+  <br>
+  <label for="search">ابحث باسم الطالب:</label>
+  <input type="text" id="search" placeholder="أدخل الاسم...">
+</div>
+<table id="reportTable">
+  <thead><tr id="headerRow"></tr></thead>
+  <tbody></tbody>
+</table>
+<div class="footer">تصميم الأستاذ أحمد الضامري</div>
+<div id="popup" class="popup">
+  <p>اختر طريقة التصدير:</p>
+  <label><input type="radio" name="exportType" value="all" checked> تصدير كل البيانات</label><br>
+  <label><input type="radio" name="exportType" value="filtered"> تصدير المعروض فقط</label><br>
+  <button onclick="previewBeforeExport()">معاينة قبل التصدير</button>
+  <button onclick="printReport()">طباعة</button>
+  <button onclick="downloadPDF()">تحميل PDF</button>
+  <button onclick="downloadExcel()">تحميل Excel</button>
+  <button onclick="closePopup()">إلغاء</button>
+</div>
+<script>
+const fileInput = document.getElementById('fileInput');
+const classSelect = document.getElementById('classSelect');
+const sheetSelect = document.getElementById('sheetSelect');
+const searchInput = document.getElementById('search');
+const headerRow = document.getElementById('headerRow');
+const tbody = document.querySelector('#reportTable tbody');
+const popup = document.getElementById('popup');
+
+let workbooks = [];
+let allData = [];
+let reportType = 'regular';
+
+fileInput.addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files);
+  workbooks = [];
+  classSelect.innerHTML = '';
+  for (const file of files) {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'array' });
+    workbooks.push({ workbook, filename: file.name });
+    const option = document.createElement('option');
+    option.value = workbooks.length - 1;
+    option.textContent = file.name;
+    classSelect.appendChild(option);
+  }
+  if (workbooks.length > 0) populateSheets(0);
+});
+
+classSelect.addEventListener('change', () => {
+  populateSheets(parseInt(classSelect.value));
+});
+
+searchInput.addEventListener('input', () => {
+  const term = searchInput.value.trim();
+  const filtered = allData.filter(row => row.name && row.name.includes(term));
+  if (reportType === 'annual') renderAnnualTable(filtered);
+  else renderRegularTable(filtered);
+});
+
+function populateSheets(classIndex) {
+  const wb = workbooks[classIndex].workbook;
+  sheetSelect.innerHTML = '';
+  wb.SheetNames.forEach(name => {
+    const option = document.createElement('option');
+    option.value = name;
+    option.textContent = name;
+    sheetSelect.appendChild(option);
+  });
+}
+
+function loadSelectedSheets() {
+  const selectedWorkbook = workbooks[parseInt(classSelect.value)];
+  const selectedSheets = Array.from(sheetSelect.selectedOptions).map(opt => opt.value);
+  if (selectedSheets.length === 0) return alert("يرجى اختيار ورقة واحدة على الأقل");
+
+  allData = [];
+  selectedSheets.forEach(sheetName => {
+    const sheet = selectedWorkbook.workbook.Sheets[sheetName];
+    const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    const rows = json.slice(5);
+    if (sheetName.includes("سجل")) {
+      reportType = 'annual';
+      const data = rows.map(row => {
+        const term1 = parseFloat(row[4]) || 0;
+        const term2 = parseFloat(row[9]) || 0;
+        return {
+          name: row[1],
+          term1Grade: row[4],
+          term1Level: row[5],
+          term2Grade: row[9],
+          term2Level: row[10],
+          finalGrade: ((term1 + term2) / 2).toFixed(1)
+        };
+      }).filter(entry => entry.name);
+      allData = allData.concat(data);
+    } else {
+      reportType = 'regular';
+      const data = rows.map(row => ({
+        name: row[1],
+        oral1: row[2],
+        oral2: row[3],
+        practical1: row[5],
+        practical2: row[6],
+        project: row[8],
+        exam: row[9],
+        total: row[10]
+      })).filter(entry => entry.name);
+      allData = allData.concat(data);
+    }
+  });
+  if (reportType === 'annual') renderAnnualTable(allData);
+  else renderRegularTable(allData);
+}
+
+function renderAnnualTable(data) {
+  headerRow.innerHTML = `<th>اسم الطالب</th><th>درجة الفصل الأول</th><th>مستوى الفصل الأول</th><th>درجة الفصل الثاني</th><th>مستوى الفصل الثاني</th><th>نهاية العام</th><th>المستوى العام</th>`;
+  tbody.innerHTML = '';
+  data.forEach(row => {
+    const finalGrade = parseFloat(row.finalGrade);
+    let generalLevel = '';
+    if (finalGrade >= 90) generalLevel = 'أ';
+    else if (finalGrade >= 80) generalLevel = 'ب';
+    else if (finalGrade >= 65) generalLevel = 'ج';
+    else if (finalGrade >= 50) generalLevel = 'د';
+    else generalLevel = 'هـ';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.name}</td><td>${row.term1Grade}</td><td>${row.term1Level}</td><td>${row.term2Grade}</td><td>${row.term2Level}</td><td>${row.finalGrade}</td><td>${generalLevel}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderRegularTable(data) {
+  headerRow.innerHTML = `<th>اسم الطالب</th><th>الأعمال الشفوية 1</th><th>الأعمال الشفوية 2</th><th>النشاط العملي 1</th><th>النشاط العملي 2</th><th>درجة المشروع</th><th>درجة الاختبار</th><th>المجموع الكلي للدرجات</th>`;
+  tbody.innerHTML = '';
+  data.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.name}</td><td>${row.oral1} / 10</td><td>${row.oral2} / 10</td><td>${row.practical1} / 20</td><td>${row.practical2} / 20</td><td>${row.project} / 20</td><td>${row.exam} / 20</td><td>${row.total}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function showExportOptions() {
+  popup.style.display = 'block';
+}
+
+function closePopup() {
+  popup.style.display = 'none';
+}
+
+function previewBeforeExport() {
+  closePopup();
+  window.print();
+}
+
+function printReport() {
+  closePopup();
+  window.print();
+}
+
+function downloadPDF() {
+  closePopup();
+  const element = document.getElementById('reportTable');
+  const opt = {
+    margin: 0.5,
+    filename: 'تقرير_تقنية_المعلومات.pdf',
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+  };
+  html2pdf().set(opt).from(element).save();
+}
+
+function downloadExcel() {
+  closePopup();
+  const wb = XLSX.utils.book_new();
+  const ws_data = [
+    [...headerRow.querySelectorAll('th')].map(th => th.innerText),
+    ...[...tbody.querySelectorAll('tr')].map(tr => [...tr.querySelectorAll('td')].map(td => td.innerText))
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  XLSX.utils.book_append_sheet(wb, ws, 'التقرير');
+  XLSX.writeFile(wb, 'تقرير_تقنية_المعلومات.xlsx');
+}
+</script>
+</body>
+</html>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>لوحة تقارير ودرجات — تقنية المعلومات</title>
