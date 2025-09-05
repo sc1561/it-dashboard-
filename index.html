@@ -171,17 +171,24 @@ function loadSelectedSheets() {
   selectedSheets.forEach(sheetName => {
     const sheet = selectedWorkbook.workbook.Sheets[sheetName];
     const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    // استخراج الصفوف بعد رؤوس الأعمدة مباشرة (بدون تخطي 5 صفوف)
+    const headers = json[0] || [];
     const rows = json.slice(1);
     const data = rows.map(row => {
       let entry = {};
-      dynamicHeaders.forEach((header, idx) => {
+      headers.forEach((header, idx) => {
         entry[header] = row[idx];
       });
       return entry;
-    }).filter(entry => entry[dynamicHeaders[0]]); // أول عمود غالباً اسم الطالب
+    }).filter(entry => entry[headers[0]]); // أول عمود غالباً اسم الطالب
     allData = allData.concat(data);
   });
+
+  // تحديث dynamicHeaders لتكون رؤوس آخر ورقة مختارة فقط (للتوافق مع renderDynamicTable)
+  if (selectedSheets.length > 0) {
+    const lastSheet = selectedWorkbook.workbook.Sheets[selectedSheets[selectedSheets.length - 1]];
+    const lastJson = XLSX.utils.sheet_to_json(lastSheet, { header: 1 });
+    dynamicHeaders = lastJson[0] || [];
+  }
 
   renderDynamicTable(allData);
 }
