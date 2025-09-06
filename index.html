@@ -1,351 +1,801 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>التقارير في مادة تقنية المعلومات — نسخة ثابتة</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Cairo', sans-serif; background: linear-gradient(135deg, #f3f4f6, #e0f7fa); padding: 20px; direction: rtl; color: #333; }
-    h1 { text-align: center; font-size: 28px; color: #006064; margin-bottom: 16px; }
-    .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-    label, select, input, button { font-size: 16px; }
-    button { padding: 8px 14px; border: 0; background:#26a69a; color:#fff; border-radius:8px; cursor:pointer }
-    button:hover { opacity:.9 }
-    table { width: 100%; border-collapse: collapse; margin-top: 16px; background-color: #fff; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
-    th { background-color: #26a69a; color: white; position: sticky; top:0; }
-    tr:nth-child(even) { background-color: #f2f2f2; }
-    .footer { margin-top: 24px; font-size: 14px; text-align: center; color: #666; }
-    .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border: 2px solid #26a69a; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,.25); display: none; z-index: 1000; }
-    .popup button { margin: 8px; }
-    .pill { background:#e0f2f1; color:#006064; padding:4px 10px; border-radius:999px; font-size:12px; }
-    .note { font-size:12px; color:#555 }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام تقييم الطلاب - الصفوف (5-6)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 95%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%);
+        }
+        
+        h1 {
+            margin-bottom: 15px;
+            font-size: 32px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header-info {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px 20px;
+            border-radius: 30px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .info-item i {
+            margin-left: 10px;
+            font-size: 20px;
+        }
+        
+        .tabs-container {
+            background-color: #fff;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+        }
+        
+        .tabs {
+            display: flex;
+            background: linear-gradient(135deg, #4a6491 0%, #2c3e50 100%);
+            overflow-x: auto;
+        }
+        
+        .tab-btn {
+            padding: 18px 25px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tab-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .tab-btn.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .tab-btn.active::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #ff7e5f, #feb47b);
+        }
+        
+        .tab-content {
+            display: none;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 0 0 15px 15px;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .student-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 16px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: #4a6491;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(74, 100, 145, 0.2);
+        }
+        
+        .evaluation-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .evaluation-table th, .evaluation-table td {
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .evaluation-table th {
+            background: linear-gradient(135deg, #4a6491, #2c3e50);
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        .evaluation-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .evaluation-table tr:hover {
+            background-color: #f0f4ff;
+        }
+        
+        .evaluation-table input {
+            width: 60px;
+            text-align: center;
+            margin: 0 auto;
+            padding: 8px;
+            font-weight: 600;
+        }
+        
+        .summary {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 25px;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .summary-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-weight: 700;
+            font-size: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px dashed #ccc;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .summary-item {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .summary-item .label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .summary-item .value {
+            font-weight: 700;
+            font-size: 18px;
+            color: #4a6491;
+        }
+        
+        .summary-item.total {
+            background: linear-gradient(135deg, #4a6491, #2c3e50);
+            color: white;
+        }
+        
+        .summary-item.total .value {
+            color: white;
+            font-size: 22px;
+        }
+        
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #4a6491, #2c3e50);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-print {
+            background: linear-gradient(135deg, #2c3e50, #1c2e40);
+        }
+        
+        .btn-share {
+            background: linear-gradient(135deg, #00b09b, #96c93d);
+        }
+        
+        .btn-reset {
+            background: linear-gradient(135deg, #ff7e5f, #feb47b);
+        }
+        
+        .share-options {
+            display: none;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border: 2px solid #e0e0e0;
+        }
+        
+        .share-options.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .share-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-weight: 700;
+            font-size: 20px;
+        }
+        
+        .share-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .share-btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .share-btn.email {
+            background: linear-gradient(135deg, #ea4335, #d14836);
+            color: white;
+        }
+        
+        .share-btn.pdf {
+            background: linear-gradient(135deg, #4285f4, #346ac3);
+            color: white;
+        }
+        
+        .share-btn.whatsapp {
+            background: linear-gradient(135deg, #25d366, #128c7e);
+            color: white;
+        }
+        
+        .share-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        @media (max-width: 992px) {
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab-btn {
+                flex: 1 0 33.33%;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header-info {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .tab-btn {
+                flex: 1 0 50%;
+                padding: 15px;
+                font-size: 14px;
+            }
+            
+            .student-form {
+                grid-template-columns: 1fr;
+            }
+            
+            .evaluation-table {
+                font-size: 13px;
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .share-buttons {
+                flex-direction: column;
+            }
+            
+            .share-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        .current-selection {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-right: 5px solid #4a6491;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .current-selection i {
+            color: #4a6491;
+            font-size: 20px;
+        }
+    </style>
 </head>
 <body>
-  <h1>التقارير في مادة تقنية المعلومات</h1>
+    <div class="container">
+        <header>
+            <h1>نظام تقييم الطلاب - الصفوف (5-6)</h1>
+            <p>استمارة تقييم طلبة الحلقة الثانية لمادة تقنية المعلومات للعام الدراسي 2025 / 2026م</p>
+            
+            <div class="header-info">
+                <div class="info-item">
+                    <i class="fas fa-user-graduate"></i>
+                    <span>الصفوف: الخامس والسادس</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-book"></i>
+                    <span>مادة: تقنية المعلومات</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>العام: 2025 / 2026</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="current-selection">
+            <i class="fas fa-check-circle"></i>
+            <span>الورقة المحددة حالياً: <strong>الفصل الدراسي الأول</strong></span>
+        </div>
+        
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="openTab('first-semester')">
+                    <i class="fas fa-file-alt"></i> الفصل الأول
+                </button>
+                <button class="tab-btn" onclick="openTab('second-semester')">
+                    <i class="fas fa-file-alt"></i> الفصل الثاني
+                </button>
+                <button class="tab-btn" onclick="openTab('annual-record')">
+                    <i class="fas fa-chart-line"></i> السجل السنوي
+                </button>
+                <button class="tab-btn" onclick="openTab('project-form')">
+                    <i class="fas fa-project-diagram"></i> استمارة المشروع
+                </button>
+            </div>
+            
+            <div id="first-semester" class="tab-content active">
+                <h2><i class="fas fa-file-alt"></i> الفصل الدراسي الأول</h2>
+                
+                <div class="student-form">
+                    <div class="form-group">
+                        <label for="class"><i class="fas fa-users"></i> الصف:</label>
+                        <select id="class">
+                            <option value="">اختر الصف</option>
+                            <option value="5">الصف الخامس</option>
+                            <option value="6">الصف السادس</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="section"><i class="fas fa-layer-group"></i> الشعبة:</label>
+                        <input type="text" id="section">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="student-name"><i class="fas fa-user"></i> اسم الطالب:</label>
+                        <input type="text" id="student-name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="student-number"><i class="fas fa-hashtag"></i> الرقم التسلسلي:</label>
+                        <input type="number" id="student-number" min="1">
+                    </div>
+                </div>
+                
+                <table class="evaluation-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">م</th>
+                            <th rowspan="2">اسم الطالب</th>
+                            <th colspan="2">الحوار</th>
+                            <th rowspan="2">المجموع</th>
+                            <th colspan="4">الأسئلة القصيرة</th>
+                            <th rowspan="2">المجموع</th>
+                            <th colspan="2">الأنشطة العملية</th>
+                            <th rowspan="2">المجموع</th>
+                            <th rowspan="2">المشروع</th>
+                            <th rowspan="2">الدرجة الكلية</th>
+                        </tr>
+                        <tr>
+                            <th>10</th>
+                            <th>10</th>
+                            <th>5</th>
+                            <th>5</th>
+                            <th>5</th>
+                            <th>5</th>
+                            <th>20</th>
+                            <th>20</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>محمد</td>
+                            <td><input type="number" min="0" max="10" value="10"></td>
+                            <td><input type="number" min="0" max="10" value="7"></td>
+                            <td>17</td>
+                            <td><input type="number" min="0" max="5" value="5"></td>
+                            <td><input type="number" min="0" max="5" value="5"></td>
+                            <td><input type="number" min="0" max="5" value="5"></td>
+                            <td><input type="number" min="0" max="5" value="5"></td>
+                            <td>20</td>
+                            <td><input type="number" min="0" max="20" value="20"></td>
+                            <td><input type="number" min="0" max="20" value="16"></td>
+                            <td>36</td>
+                            <td><input type="number" min="0" max="20" value="10"></td>
+                            <td>83</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="summary">
+                    <div class="summary-title">ملخص الدرجات - الفصل الأول</div>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="label">الحوار:</span>
+                            <span class="value">17/20</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">الأسئلة القصيرة:</span>
+                            <span class="value">20/20</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">الأنشطة العملية:</span>
+                            <span class="value">36/40</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">المشروع:</span>
+                            <span class="value">10/20</span>
+                        </div>
+                        <div class="summary-item total">
+                            <span class="label">المجموع الكلي:</span>
+                            <span class="value">83/100</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn">
+                        <i class="fas fa-save"></i> حفظ البيانات
+                    </button>
+                    <button class="btn btn-share" onclick="toggleShareOptions()">
+                        <i class="fas fa-share-alt"></i> مشاركة النتائج
+                    </button>
+                    <button class="btn btn-print">
+                        <i class="fas fa-print"></i> طباعة النموذج
+                    </button>
+                    <button class="btn btn-reset">
+                        <i class="fas fa-redo"></i> اعادة تعيين
+                    </button>
+                </div>
+                
+                <div id="share-options" class="share-options">
+                    <div class="share-title">اختر طريقة المشاركة</div>
+                    <div class="share-buttons">
+                        <button class="share-btn email">
+                            <i class="fas fa-envelope"></i> إرسال عبر البريد الإلكتروني
+                        </button>
+                        <button class="share-btn pdf">
+                            <i class="fas fa-file-pdf"></i> تصدير إلى PDF
+                        </button>
+                        <button class="share-btn whatsapp">
+                            <i class="fab fa-whatsapp"></i> مشاركة عبر واتساب
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="second-semester" class="tab-content">
+                <h2><i class="fas fa-file-alt"></i> الفصل الدراسي الثاني</h2>
+                <p>سيتم عرض نموذج الفصل الدراسي الثاني هنا. هذا النموذج مشابه لنموذج الفصل الأول ولكن ببيانات الفصل الثاني.</p>
+                
+                <div class="summary">
+                    <div class="summary-title">ملخص الدرجات - الفصل الثاني</div>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="label">الحوار:</span>
+                            <span class="value">15/20</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">الأسئلة القصيرة:</span>
+                            <span class="value">18/20</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">الأنشطة العملية:</span>
+                            <span class="value">38/40</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">المشروع:</span>
+                            <span class="value">18/20</span>
+                        </div>
+                        <div class="summary-item total">
+                            <span class="label">المجموع الكلي:</span>
+                            <span class="value">89/100</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="annual-record" class="tab-content">
+                <h2><i class="fas fa-chart-line"></i> السجل السنوي</h2>
+                <p>هنا يتم عرض السجل السنوي للطالب مع نتائج الفصلين الدراسيين ومتوسط العام.</p>
+                
+                <div class="summary">
+                    <div class="summary-title">التقييم السنوي</div>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="label">الفصل الدراسي الأول:</span>
+                            <span class="value">83/100</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">الفصل الدراسي الثاني:</span>
+                            <span class="value">89/100</span>
+                        </div>
+                        <div class="summary-item total">
+                            <span class="label">المعدل السنوي:</span>
+                            <span class="value">86/100</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">التقدير:</span>
+                            <span class="value">جيد جداً</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="project-form" class="tab-content">
+                <h2><i class="fas fa-project-diagram"></i> استمارة المشروع المقترح</h2>
+                <p>هنا يتم عرض استمارة تقييم المشروع في مادة تقنية المعلومات.</p>
+                
+                <div class="summary">
+                    <div class="summary-title">تقييم المشروع</div>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="label">التخطيط:</span>
+                            <span class="value">4/5</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">التنفيذ العملي:</span>
+                            <span class="value">6/7</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">الاتصال وعمل الفريق:</span>
+                            <span class="value">2.5/3</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">التحليل والاستنتاج:</span>
+                            <span class="value">4/5</span>
+                        </div>
+                        <div class="summary-item total">
+                            <span class="label">المجموع الكلي:</span>
+                            <span class="value">16.5/20</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  <div class="bar">
-    <label for="fileInput">اختر ملفات الإكسل:</label>
-    <input type="file" id="fileInput" accept=".xlsx" multiple />
-    <label for="classSelect">اختر الملف:</label>
-    <select id="classSelect"></select>
-    <label for="sheetSelect">اختر ورقة/أوراق:</label>
-    <select id="sheetSelect" multiple></select>
-    <button onclick="loadSelectedSheets()">تحميل الأوراق المختارة</button>
-    <button onclick="showExportOptions()">خيارات التصدير والطباعة</button>
-    <label for="search">ابحث باسم الطالب:</label>
-    <input type="text" id="search" placeholder="أدخل الاسم..." />
-    <span id="bandBadge" class="pill" title="النطاق المكتشف"></span>
-  </div>
-
-
-  <table id="reportTable">
-    <thead><tr id="headerRow"></tr></thead>
-    <tbody></tbody>
-  </table>
-
-  <div class="footer">يدعم نطاقات: 1-4، 5-6، 7-10، 11-12 والسجل السنوي • بحث وتصدير PDF/Excel</div>
-
-  <div id="popup" class="popup">
-    <p>اختر طريقة التصدير:</p>
-    <label><input type="radio" name="exportType" value="all" checked> تصدير كل البيانات</label><br>
-    <label><input type="radio" name="exportType" value="filtered"> تصدير المعروض فقط</label><br>
-    <button onclick="previewBeforeExport()">معاينة قبل التصدير</button>
-    <button onclick="printReport()">طباعة</button>
-    <button onclick="downloadPDF()">تحميل PDF</button>
-    <button onclick="downloadExcel()">تحميل Excel</button>
-    <button onclick="closePopup()">إلغاء</button>
-  </div>
-
-  <!-- مكتبات -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
-  <script>
-    // عناصر DOM
-    const fileInput  = document.getElementById('fileInput');
-    const classSelect= document.getElementById('classSelect');
-    const sheetSelect= document.getElementById('sheetSelect');
-    const searchInput= document.getElementById('search');
-    const headerRow  = document.getElementById('headerRow');
-    const tbody      = document.querySelector('#reportTable tbody');
-    const popup      = document.getElementById('popup');
-    const bandBadge  = document.getElementById('bandBadge');
-
-    // حالة
-    let workbooks = [];
-    let allData = [];
-    let dynamicHeaders = [];
-    let detectedBand = ''; // '1-4','5-6','7-10','11-12','annual','generic'
-
-    // تطبيع عربي مبسط
-    const normalize = (s) => (s||'').toString().trim()
-      .replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/\s+/g,' ')
-      .toLowerCase();
-
-    // مرادفات للأعمدة
-    const synonyms = {
-      name:    ['اسم الطالب','الطالب','الاسم','اسم'],
-      dialog:  ['مجموع درجه الحوار','مجموع درجات الحوار','درجة الحوار','الحوار'],
-      shortq:  ['مجموع درجه الاسئله القصيره','مجموع درجات الاسئله القصيره','الاسئله القصيره','الاسئلة القصيرة'],
-      practical:['مجموع درجه الانشطه العمليه','مجموع درجات الانشطه العمليه','الانشطه العمليه','النشاط العملي','النشاط العملي 1','النشاط العملي 2','العملي'],
-      project: ['مجموع درجه المشروع','درجه المشروع','المشروع'],
-      total:   ['درجه الطالب الكليه','المجموع الكلي','المجموع','المجموع الكلي للدرجات'],
-      level:   ['المستوى','المستوى العام'],
-      t1:      ['نتيجه الفصل الدراسي الاول','درجه الفصل الاول','الفصل الدراسي الاول'],
-      t2:      ['نتيجه الفصل الدراسي الثاني','درجه الفصل الثاني','الفصل الدراسي الثاني'],
-      final:   ['درجه نهايه العام','نهايه العام','المعدل النهائي']
-    };
-
-    // فحص جاهزية المكتبات عند التحميل
-    window.addEventListener('load', () => {
-      if (!window.XLSX) {
-        alert("تعذّر تحميل مكتبة XLSX. تأكد من اتصال الإنترنت أو استبدل الروابط بروابط محلية.");
-      }
-    });
-
-    // أدوات اختيار افتراضي
-    function ensureDefaultSelections() {
-      if (classSelect.options.length > 0 && !classSelect.value) {
-        classSelect.value = classSelect.options[0].value;
-      }
-      if (sheetSelect.options.length > 0 && sheetSelect.selectedOptions.length === 0) {
-        sheetSelect.options[0].selected = true;
-      }
-    }
-
-    // ربط الأحداث
-    fileInput.addEventListener('change', async (e) => {
-      try {
-        const files = Array.from(e.target.files);
-        workbooks = []; classSelect.innerHTML = ''; sheetSelect.innerHTML = '';
-        for (const file of files) {
-          const data = await file.arrayBuffer();
-          const workbook = XLSX.read(data, { type: 'array' });
-          workbooks.push({ workbook, filename: file.name });
-          const option = document.createElement('option');
-          option.value = workbooks.length - 1;
-          option.textContent = file.name;
-          classSelect.appendChild(option);
+    <script>
+        function openTab(tabId) {
+            // إخفاء جميع محتويات التبويبات
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+            
+            // إلغاء تنشيط جميع أزرار التبويبات
+            const tabButtons = document.getElementsByClassName('tab-btn');
+            for (let i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove('active');
+            }
+            
+            // تفعيل التبويب المحدد
+            document.getElementById(tabId).classList.add('active');
+            
+            // البحث عن الزر المناسب وتفعيله
+            const buttons = document.getElementsByClassName('tab-btn');
+            for (let i = 0; i < buttons.length; i++) {
+                if (buttons[i].getAttribute('onclick').includes(tabId)) {
+                    buttons[i].classList.add('active');
+                    break;
+                }
+            }
+            
+            // تحديث الورقة المحددة حالياً
+            updateCurrentSelection(tabId);
         }
-        if (workbooks.length > 0) populateSheets(0);
-        ensureDefaultSelections();
-      } catch (err) {
-        console.error(err); alert("فشل تحميل الملف: " + err.message);
-      }
-    });
-
-    classSelect.addEventListener('change', () => {
-      populateSheets(parseInt(classSelect.value));
-      ensureDefaultSelections();
-    });
-
-    searchInput.addEventListener('input', () => {
-      const term = normalize(searchInput.value);
-      const nameKey = dynamicHeaders[0] || 'اسم الطالب';
-      const filtered = allData.filter(row => row[nameKey] && normalize(row[nameKey]).includes(term));
-      renderTable(filtered, dynamicHeaders);
-    });
-
-    // تعبئة الأوراق
-    function populateSheets(classIndex){
-      const wb = workbooks[classIndex]?.workbook;
-      sheetSelect.innerHTML = '';
-      if (!wb) return;
-      wb.SheetNames.forEach(name=>{
-        const opt = document.createElement('option');
-        opt.value = name; opt.textContent = name;
-        sheetSelect.appendChild(opt);
-      });
-    }
-
-    // أدوات مطابقة أعمدة
-    function headerIndex(headers, keys){
-      const nh = headers.map(h => normalize(h || "")); // حماية من undefined
-      for (let i=0;i<nh.length;i++){
-        for (const k of keys){
-          if (nh[i] === normalize(k)) return i;
+        
+        function updateCurrentSelection(tabId) {
+            const selectionText = document.querySelector('.current-selection strong');
+            let tabName = "";
+            
+            switch(tabId) {
+                case 'first-semester':
+                    tabName = "الفصل الدراسي الأول";
+                    break;
+                case 'second-semester':
+                    tabName = "الفصل الدراسي الثاني";
+                    break;
+                case 'annual-record':
+                    tabName = "السجل السنوي";
+                    break;
+                case 'project-form':
+                    tabName = "استمارة المشروع";
+                    break;
+            }
+            
+            selectionText.textContent = tabName;
         }
-      }
-      for (let i=0;i<nh.length;i++){
-        for (const k of keys){
-          const t = normalize(k);
-          if (t && nh[i] && nh[i].includes(t)) return i; // حماية قبل includes
+        
+        function toggleShareOptions() {
+            const shareOptions = document.getElementById('share-options');
+            shareOptions.classList.toggle('active');
         }
-      }
-      return -1;
-    }
-
-    function detectBand(name, headers){
-      const safeHeaders = (headers||[]).map(h => h || ""); // حماية من undefined
-      const title = (name||"") + " " + safeHeaders.join(" ");
-      if (/سجل|كشف|سنوي/.test(title)) return 'annual';
-      if (/(^|[^0-9])1-4([^0-9]|$)/.test(title))  return '1-4';
-      if (/(^|[^0-9])5-6([^0-9]|$)/.test(title))  return '5-6';
-      if (/(^|[^0-9])7-10([^0-9]|$)/.test(title)) return '7-10';
-      if (/(^|[^0-9])11-12([^0-9]|$)/.test(title))return '11-12';
-      return 'generic';
-    }
-
-    function preferredColumnsForBand(band){
-      if (band === 'annual'){
-        return [synonyms.name, synonyms.t1, synonyms.t2, synonyms.final, synonyms.level];
-      }
-      return [synonyms.name, synonyms.dialog, synonyms.shortq, synonyms.practical, synonyms.project, synonyms.total, synonyms.level];
-    }
-
-    function buildColumnMap(headers, band){
-      const safeHeaders = (headers||[]).map(h => (h===undefined || h===null) ? '' : String(h));
-      const order = preferredColumnsForBand(band);
-      const map = [];
-      order.forEach(group => {
-        const idx = headerIndex(safeHeaders, group);
-        if (idx >= 0) map.push({title: safeHeaders[idx] || group[0], idx});
-      });
-      // fallback: لو ما تعرّف ولا عمود، اعرض كل الأعمدة كما هي
-      if (map.length === 0) return safeHeaders.map((h,i)=>({title:h, idx:i}));
-      return map;
-    }
-
-    // التحميل الرئيسي
-    async function loadSelectedSheets() {
-      try {
-        const clsVal = classSelect.value;
-        if (clsVal === "" || clsVal === undefined) {
-          alert("رجاءً اختر ملف الإكسل أولًا من القائمة."); return;
-        }
-        const selectedWorkbook = workbooks[parseInt(clsVal)];
-        if (!selectedWorkbook || !selectedWorkbook.workbook) {
-          alert("لم أستطع الوصول للملف المحدد. أعد الاختيار أو ارفع الملف مرة أخرى."); return;
-        }
-        if (sheetSelect.selectedOptions.length === 0 && sheetSelect.options.length > 0) {
-          sheetSelect.options[0].selected = true;
-        }
-        const selectedSheets = Array.from(sheetSelect.selectedOptions).map(o=>o.value);
-        if (selectedSheets.length === 0) { alert("يرجى اختيار ورقة واحدة على الأقل."); return; }
-        if (!window.XLSX || !XLSX.utils || !XLSX.read) {
-          alert("مكتبة XLSX غير متوفرة. تأكد من تحميلها أو الاتصال بالإنترنت."); return;
-        }
-
-        allData = []; dynamicHeaders = []; detectedBand='';
-
-        selectedSheets.forEach(sheetName=>{
-          const sheet = selectedWorkbook.workbook.Sheets[sheetName];
-          if (!sheet) return;
-          const json = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows:false });
-          if (!json || json.length===0) return;
-
-          // تحديد صف العناوين: أول صف يحوي >=3 خلايا غير فارغة
-          let hdrIdx = 0;
-          for (let r=0; r<Math.min(10,json.length); r++){
-            const filled = (json[r]||[]).filter(x=>x!==null && x!==undefined && String(x).trim()!=='').length;
-            if (filled>=3){ hdrIdx=r; break; }
-          }
-          const headers = (json[hdrIdx]||[]).map(x=>x===undefined? '': String(x));
-          const band = detectBand(sheetName + ' ' + (selectedWorkbook.filename||''), headers);
-          detectedBand = detectedBand || band;
-
-          const colMap = buildColumnMap(headers, band);
-          const rows = json.slice(hdrIdx+1);
-
-          rows.forEach(r=>{
-            const obj = {};
-            colMap.forEach(({title, idx})=> obj[title] = (r && r[idx] !== undefined) ? r[idx] : '');
-            allData.push(obj);
-          });
-
-          dynamicHeaders = colMap.map(c=>c.title); // آخر خريطة
+        
+        // إضافة التفاعل لحقول الإدخال
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('change', calculateTotals);
         });
-
-        bandBadge.textContent = detectedBand ? ('النطاق: '+detectedBand) : 'النطاق: عام';
-
-        if (dynamicHeaders.length === 0 || allData.length === 0) {
-          alert("لم أجد بيانات صالحة في الأوراق المختارة. تأكد أن الصف الأول يحتوي عناوين واضحة.");
-          headerRow.innerHTML=''; tbody.innerHTML=''; return;
+        
+        function calculateTotals() {
+            // هنا سيتم إضافة دوال حساب المجاميع
+            console.log('Calculating totals...');
         }
-
-        renderTable(allData, dynamicHeaders);
-
-      } catch (e) {
-        console.error(e);
-        alert("حدث خطأ أثناء التحميل:\n" + (e && e.message ? e.message : e));
-      }
-    }
-
-    // الرسم
-
-    function renderTable(data, headers){
-      // إذا كان النطاق 1-4، اعرض الأعمدة المجمعة
-      if (detectedBand === '1-4') {
-  headerRow.innerHTML = `<th>اسم الطالب</th><th>مجموع الحوار (20)</th><th>مجموع الأسئلة القصيرة (20)</th><th>مجموع الأنشطة العملية (45)</th><th>درجة المشروع (15)</th><th>الدرجة الكلية (100)</th>`;
-        tbody.innerHTML = '';
-        (data||[]).forEach((row, idx)=>{
-          // تجاهل الصفوف قبل الصف رقم 7 (أي idx < 6)
-          if (idx < 6) return;
-          // استخراج الأعمدة حسب الترتيب المذكور
-          const keys = Object.keys(row);
-          const studentName = row[keys[1]] || '';
-          if (!studentName || String(studentName).trim() === '') return;
-          if (String(studentName).trim().includes('معلم المادة')) return;
-          // الحوار: C7-F7 (أعمدة 2-5)
-          let dialogSum = 0;
-          for(let i=2;i<=5;i++) dialogSum += parseFloat(row[keys[i]])||0;
-          // الأسئلة القصيرة: H7-K7 (أعمدة 7-10)
-          let shortqSum = 0;
-          for(let i=7;i<=10;i++) shortqSum += parseFloat(row[keys[i]])||0;
-          // الأنشطة العملية: M7-O7 (أعمدة 12-14)
-          let practicalSum = 0;
-          for(let i=12;i<=14;i++) practicalSum += parseFloat(row[keys[i]])||0;
-          // المشروع: Q7 (عمود 16)
-          let projectVal = parseFloat(row[keys[16]])||0;
-          // الدرجة الكلية: R7 (عمود 17)
-          let total = parseFloat(row[keys[17]])||0;
-          // صف الجدول
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${studentName}</td><td>${dialogSum}</td><td>${shortqSum}</td><td>${practicalSum}</td><td>${projectVal}</td><td>${total}</td>`;
-          tbody.appendChild(tr);
+        
+        // إغلاق خيارات المشاركة عند النقر خارجها
+        document.addEventListener('click', function(event) {
+            const shareOptions = document.getElementById('share-options');
+            const shareBtn = document.querySelector('.btn-share');
+            
+            if (shareOptions.classList.contains('active') && 
+                !shareOptions.contains(event.target) && 
+                event.target !== shareBtn &&
+                !shareBtn.contains(event.target)) {
+                shareOptions.classList.remove('active');
+            }
         });
-        return;
-      }
-      // باقي النطاقات: عرض عادي
-      headerRow.innerHTML = (headers||[]).map(h=>`<th>${h ?? ''}</th>`).join('');
-      tbody.innerHTML = '';
-      (data||[]).forEach(row=>{
-        const studentName = row['اسم الطالب']||row['الطالب']||'';
-  if (!studentName || String(studentName).trim() === '') return; // تجاهل الصف بدون اسم طالب
-  if (String(studentName).trim().includes('معلم المادة')) return; // تجاهل الصف الذي يحمل معلم المادة
-        const tr = document.createElement('tr');
-        tr.innerHTML = (headers||[]).map(h=>`<td>${(row && row[h] !== undefined && row[h] !== null) ? row[h] : ''}</td>`).join('');
-        tbody.appendChild(tr);
-      });
-    }
-
-    // نافذة التصدير
-    function showExportOptions(){ popup.style.display='block'; }
-    function closePopup(){ popup.style.display='none'; }
-    function previewBeforeExport(){ closePopup(); window.print(); }
-    function printReport(){ closePopup(); window.print(); }
-
-    function downloadPDF(){
-      closePopup();
-      const element = document.getElementById('reportTable');
-      const opt = { margin:.5, filename:'تقرير_تقنية_المعلومات.pdf',
-        image:{type:'jpeg',quality:.98}, html2canvas:{scale:2},
-        jsPDF:{unit:'in',format:'a4',orientation:'portrait'} };
-      html2pdf().set(opt).from(element).save();
-    }
-
-    function downloadExcel(){
-      closePopup();
-      const wb = XLSX.utils.book_new();
-      const headers = [...headerRow.querySelectorAll('th')].map(th=>th.innerText);
-      const rows = [...tbody.querySelectorAll('tr')].map(tr => [...tr.querySelectorAll('td')].map(td=>td.innerText));
-      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-      XLSX.utils.book_append_sheet(wb, ws, 'التقرير');
-      XLSX.writeFile(wb, 'تقرير_تقنية_المعلومات.xlsx');
-    }
-  </script>
+    </script>
 </body>
 </html>
