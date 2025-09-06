@@ -286,7 +286,7 @@
           if (idx < 6) return;
           // استخراج الأعمدة حسب الترتيب المذكور
           const keys = Object.keys(row);
-          const studentName = row[keys[0]] || '';
+          const studentName = row[keys[1]] || '';
           if (!studentName || String(studentName).trim() === '') return;
           if (String(studentName).trim().includes('معلم المادة')) return;
           // الحوار: C7-F7 (أعمدة 2-5)
