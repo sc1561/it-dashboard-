@@ -321,6 +321,10 @@
             background: linear-gradient(135deg, #ff7e5f, #feb47b);
         }
         
+        .btn-upload {
+            background: linear-gradient(135deg, #8E44AD, #9B59B6);
+        }
+        
         .share-options {
             display: none;
             background-color: white;
@@ -382,6 +386,119 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
         }
         
+        .upload-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            text-align: center;
+            border: 3px dashed #8E44AD;
+        }
+        
+        .upload-title {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .upload-icon {
+            font-size: 60px;
+            color: #8E44AD;
+            margin-bottom: 20px;
+        }
+        
+        .upload-text {
+            color: #555;
+            margin-bottom: 25px;
+            font-size: 16px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-label {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #8E44AD, #9B59B6);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .file-label:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .uploaded-files {
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .file-icon {
+            font-size: 24px;
+            color: #8E44AD;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .file-size {
+            color: #777;
+            font-size: 14px;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .file-btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .file-btn.view {
+            background: linear-gradient(135deg, #4a6491, #2c3e50);
+            color: white;
+            border: none;
+        }
+        
+        .file-btn.delete {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+        }
+        
         @media (max-width: 992px) {
             .tabs {
                 flex-wrap: wrap;
@@ -431,6 +548,22 @@
                 width: 100%;
                 justify-content: center;
             }
+            
+            .file-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .file-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .file-btn {
+                flex: 1;
+                text-align: center;
+            }
         }
         
         .current-selection {
@@ -447,6 +580,27 @@
         .current-selection i {
             color: #4a6491;
             font-size: 20px;
+        }
+        
+        .upload-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: linear-gradient(135deg, #00b09b, #96c93d);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.5s ease;
+        }
+        
+        .upload-notification.show {
+            transform: translateX(0);
         }
     </style>
 </head>
@@ -475,6 +629,35 @@
         <div class="current-selection">
             <i class="fas fa-check-circle"></i>
             <span>الورقة المحددة حالياً: <strong>الفصل الدراسي الأول</strong></span>
+        </div>
+        
+        <div class="upload-container">
+            <div class="upload-icon">
+                <i class="fas fa-file-excel"></i>
+            </div>
+            <h2 class="upload-title">رفع ملف Excel</h2>
+            <p class="upload-text">يمكنك رفع ملف Excel الخاص بك لتعبئة البيانات تلقائياً</p>
+            
+            <input type="file" id="file-upload" class="file-input" accept=".xlsx, .xls">
+            <label for="file-upload" class="file-label">
+                <i class="fas fa-upload"></i> اختر ملف Excel
+            </label>
+            
+            <div class="uploaded-files">
+                <div class="file-item">
+                    <div class="file-info">
+                        <i class="fas fa-file-excel file-icon"></i>
+                        <div>
+                            <div class="file-name">تقييم الفصل الأول.xlsx</div>
+                            <div class="file-size">2.4 MB</div>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="file-btn view"><i class="fas fa-eye"></i> عرض</button>
+                        <button class="file-btn delete"><i class="fas fa-trash"></i> حذف</button>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="tabs-container">
@@ -598,6 +781,9 @@
                     <button class="btn">
                         <i class="fas fa-save"></i> حفظ البيانات
                     </button>
+                    <button class="btn btn-upload" onclick="showUploadNotification()">
+                        <i class="fas fa-file-excel"></i> رفع ملف Excel
+                    </button>
                     <button class="btn btn-share" onclick="toggleShareOptions()">
                         <i class="fas fa-share-alt"></i> مشاركة النتائج
                     </button>
@@ -716,6 +902,11 @@
         </div>
     </div>
 
+    <div class="upload-notification" id="upload-notification">
+        <i class="fas fa-check-circle"></i>
+        <span>تم رفع ملف Excel بنجاح!</span>
+    </div>
+
     <script>
         function openTab(tabId) {
             // إخفاء جميع محتويات التبويبات
@@ -773,6 +964,15 @@
             shareOptions.classList.toggle('active');
         }
         
+        function showUploadNotification() {
+            const notification = document.getElementById('upload-notification');
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
         // إضافة التفاعل لحقول الإدخال
         const inputs = document.querySelectorAll('input');
         inputs.forEach(input => {
@@ -794,6 +994,39 @@
                 event.target !== shareBtn &&
                 !shareBtn.contains(event.target)) {
                 shareOptions.classList.remove('active');
+            }
+        });
+        
+        // معالجة رفع الملف
+        const fileInput = document.getElementById('file-upload');
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                const fileName = e.target.files[0].name;
+                const fileSize = (e.target.files[0].size / 1024 / 1024).toFixed(2);
+                
+                // هنا يمكنك إضافة كود لمعالجة ملف Excel
+                // يمكنك استخدام مكتبة مثل SheetJS (xlsx) لقراءة محتوى الملف
+                
+                // عرض إشعار برفع الملف
+                showUploadNotification();
+                
+                // تحديث قائمة الملفات (في واجهة المستخدم فقط - التطبيق الحقيقي يحتاج اتصال بالخادم)
+                const fileList = document.querySelector('.uploaded-files');
+                fileList.innerHTML = `
+                    <div class="file-item">
+                        <div class="file-info">
+                            <i class="fas fa-file-excel file-icon"></i>
+                            <div>
+                                <div class="file-name">${fileName}</div>
+                                <div class="file-size">${fileSize} MB</div>
+                            </div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="file-btn view"><i class="fas fa-eye"></i> عرض</button>
+                            <button class="file-btn delete"><i class="fas fa-trash"></i> حذف</button>
+                        </div>
+                    </div>
+                `;
             }
         });
     </script>
