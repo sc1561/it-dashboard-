@@ -281,24 +281,27 @@
       if (detectedBand === '1-4') {
   headerRow.innerHTML = `<th>اسم الطالب</th><th>مجموع الحوار (20)</th><th>مجموع الأسئلة القصيرة (20)</th><th>مجموع الأنشطة العملية (45)</th><th>درجة المشروع (15)</th><th>الدرجة الكلية (100)</th>`;
         tbody.innerHTML = '';
-        (data||[]).forEach(row=>{
-          const studentName = row['اسم الطالب']||row['الطالب']||'';
-          if (!studentName || String(studentName).trim() === '') return; // تجاهل الصف بدون اسم طالب
-          if (String(studentName).trim().includes('معلم المادة')) return; // تجاهل الصف الذي يحمل معلم المادة
-          // جمع أول 4 أعمدة للحوار
-          const dialogKeys = Object.keys(row).filter(key => key && key.toString().includes('حوار')).slice(0,4);
-          let dialogSum = dialogKeys.reduce((sum, key) => sum + (parseFloat(row[key])||0), 0);
-          // جمع أول 4 أعمدة للأسئلة القصيرة
-          const shortqKeys = Object.keys(row).filter(key => key && key.toString().includes('أسئلة قصيرة')).slice(0,4);
-          let shortqSum = shortqKeys.reduce((sum, key) => sum + (parseFloat(row[key])||0), 0);
-          // جمع أول 3 أعمدة للأنشطة العملية
-          const practicalKeys = Object.keys(row).filter(key => key && key.toString().includes('عملية')).slice(0,3);
-          let practicalSum = practicalKeys.reduce((sum, key) => sum + (parseFloat(row[key])||0), 0);
-          // المشروع: عمود واحد
-          let projectVal = row['المشروع'] ?? row['درجة المشروع'] ?? row['المشروع النهائي'] ?? 0;
-          projectVal = parseFloat(projectVal)||0;
-          // الدرجة الكلية
-          let total = dialogSum + shortqSum + practicalSum + projectVal;
+        (data||[]).forEach((row, idx)=>{
+          // تجاهل الصفوف قبل الصف رقم 7 (أي idx < 6)
+          if (idx < 6) return;
+          // استخراج الأعمدة حسب الترتيب المذكور
+          const keys = Object.keys(row);
+          const studentName = row[keys[0]] || '';
+          if (!studentName || String(studentName).trim() === '') return;
+          if (String(studentName).trim().includes('معلم المادة')) return;
+          // الحوار: C7-F7 (أعمدة 2-5)
+          let dialogSum = 0;
+          for(let i=2;i<=5;i++) dialogSum += parseFloat(row[keys[i]])||0;
+          // الأسئلة القصيرة: H7-K7 (أعمدة 7-10)
+          let shortqSum = 0;
+          for(let i=7;i<=10;i++) shortqSum += parseFloat(row[keys[i]])||0;
+          // الأنشطة العملية: M7-O7 (أعمدة 12-14)
+          let practicalSum = 0;
+          for(let i=12;i<=14;i++) practicalSum += parseFloat(row[keys[i]])||0;
+          // المشروع: Q7 (عمود 16)
+          let projectVal = parseFloat(row[keys[16]])||0;
+          // الدرجة الكلية: R7 (عمود 17)
+          let total = parseFloat(row[keys[17]])||0;
           // صف الجدول
           const tr = document.createElement('tr');
           tr.innerHTML = `<td>${studentName}</td><td>${dialogSum}</td><td>${shortqSum}</td><td>${practicalSum}</td><td>${projectVal}</td><td>${total}</td>`;
