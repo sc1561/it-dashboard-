@@ -607,7 +607,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>نظام تقييم الطلاب - الصفوف (5-6)</h1>
+            <h1>نظام تقييم الطلاب لجميع الصفوف</h1>
             <p>استمارة تقييم طلبة الحلقة الثانية لمادة تقنية المعلومات للعام الدراسي 2025 / 2026م</p>
             
             <div class="header-info">
@@ -1001,16 +1001,25 @@
         const fileInput = document.getElementById('file-upload');
         fileInput.addEventListener('change', function(e) {
             if (e.target.files.length > 0) {
-                const fileName = e.target.files[0].name;
-                const fileSize = (e.target.files[0].size / 1024 / 1024).toFixed(2);
-                
-                // هنا يمكنك إضافة كود لمعالجة ملف Excel
-                // يمكنك استخدام مكتبة مثل SheetJS (xlsx) لقراءة محتوى الملف
-                
+                const file = e.target.files[0];
+                const fileName = file.name;
+                const fileSize = (file.size / 1024 / 1024).toFixed(2);
+
+                // استخدم SheetJS لقراءة الملف
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const data = evt.target.result;
+                    const workbook = XLSX.read(data, {type: 'binary'});
+                    // نفترض أن المرجع يعتمد على اسم الورقة أو رؤوس الأعمدة
+                    let refInfo = detectReference(workbook);
+                    updateHeaderInfo(refInfo);
+                };
+                reader.readAsBinaryString(file);
+
                 // عرض إشعار برفع الملف
                 showUploadNotification();
-                
-                // تحديث قائمة الملفات (في واجهة المستخدم فقط - التطبيق الحقيقي يحتاج اتصال بالخادم)
+
+                // تحديث قائمة الملفات
                 const fileList = document.querySelector('.uploaded-files');
                 fileList.innerHTML = `
                     <div class="file-item">
@@ -1029,6 +1038,66 @@
                 `;
             }
         });
+
+        // تحميل ملفات الإكسل المرجعية عند بدء الصفحة
+        const referenceFiles = [
+            '1-4.xlsx',
+            '5-6.xlsx',
+            '7-10.xlsx',
+            '11-12.xlsx'
+        ];
+        const referenceWorkbooks = {};
+
+        window.addEventListener('DOMContentLoaded', () => {
+            referenceFiles.forEach(file => {
+                fetch(file)
+                    .then(res => res.arrayBuffer())
+                    .then(data => {
+                        const workbook = XLSX.read(new Uint8Array(data), {type: 'array'});
+                        referenceWorkbooks[file] = workbook;
+                    });
+            });
+        });
+
+        // دالة لاكتشاف المرجع بناءً على المقارنة مع الملفات المرجعية
+        function detectReference(workbook) {
+            // استخراج رؤوس الأعمدة من الملف المرفوع
+            const sheetNames = workbook.SheetNames;
+            const firstSheet = workbook.Sheets[sheetNames[0]];
+            const headers = XLSX.utils.sheet_to_json(firstSheet, {header:1})[0] || [];
+            // مقارنة مع كل ملف مرجعي
+            for (const [file, refWb] of Object.entries(referenceWorkbooks)) {
+                const refSheet = refWb.Sheets[refWb.SheetNames[0]];
+                const refHeaders = XLSX.utils.sheet_to_json(refSheet, {header:1})[0] || [];
+                // إذا تطابق عدد الأعمدة أو بعض الرؤوس
+                const match = headers.length === refHeaders.length && headers.every((h,i)=>String(h).trim()===String(refHeaders[i]).trim());
+                if (match) {
+                    if (file==='1-4.xlsx') return {grade:'الصفوف: الأول إلى الرابع',subject:'تقنية المعلومات',year:'2025 / 2026'};
+                    if (file==='5-6.xlsx') return {grade:'الصفوف: الخامس والسادس',subject:'تقنية المعلومات',year:'2025 / 2026'};
+                    if (file==='7-10.xlsx') return {grade:'الصفوف: السابع إلى العاشر',subject:'تقنية المعلومات',year:'2025 / 2026'};
+                    if (file==='11-12.xlsx') return {grade:'الصفوف: الحادي عشر والثاني عشر',subject:'تقنية المعلومات',year:'2025 / 2026'};
+                }
+            }
+            // fallback
+            let grade = '';
+            if (sheetNames[0].includes('1-4') || headers.some(h=>String(h).includes('الأول'))) grade = 'الصفوف: الأول إلى الرابع';
+            else if (sheetNames[0].includes('5-6') || headers.some(h=>String(h).includes('الخامس'))) grade = 'الصفوف: الخامس والسادس';
+            else if (sheetNames[0].includes('7-10') || headers.some(h=>String(h).includes('السابع'))) grade = 'الصفوف: السابع إلى العاشر';
+            else if (sheetNames[0].includes('11-12') || headers.some(h=>String(h).includes('الحادي'))) grade = 'الصفوف: الحادي عشر والثاني عشر';
+            else grade = 'صفوف غير محددة';
+            return {
+                grade,
+                subject: 'تقنية المعلومات',
+                year: '2025 / 2026'
+            };
+        }
+
+        // دالة لتحديث معلومات الهيدر
+        function updateHeaderInfo(refInfo) {
+            document.querySelectorAll('.info-item')[0].querySelector('span').textContent = refInfo.grade;
+            document.querySelectorAll('.info-item')[1].querySelector('span').textContent = 'مادة: ' + refInfo.subject;
+            document.querySelectorAll('.info-item')[2].querySelector('span').textContent = 'العام: ' + refInfo.year;
+        }
     </script>
 </body>
 </html>
