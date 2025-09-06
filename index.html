@@ -1,1103 +1,845 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام تقييم الطلاب - الصفوف (5-6)</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Cairo', sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-            color: #333;
-            line-height: 1.6;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            width: 95%;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        header {
-            background: linear-gradient(135deg, #2c3e50, #4a6491);
-            color: white;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            text-align: center;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        header::before {
-            content: "";
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%);
-        }
-        
-        h1 {
-            margin-bottom: 15px;
-            font-size: 32px;
-            font-weight: 700;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-        }
-        
-        .header-info {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-top: 20px;
-        }
-        
-        .info-item {
-            display: flex;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.15);
-            padding: 10px 20px;
-            border-radius: 30px;
-            backdrop-filter: blur(5px);
-        }
-        
-        .info-item i {
-            margin-left: 10px;
-            font-size: 20px;
-        }
-        
-        .tabs-container {
-            background-color: #fff;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            margin-bottom: 25px;
-        }
-        
-        .tabs {
-            display: flex;
-            background: linear-gradient(135deg, #4a6491 0%, #2c3e50 100%);
-            overflow-x: auto;
-        }
-        
-        .tab-btn {
-            padding: 18px 25px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.8);
-            transition: all 0.3s ease;
-            white-space: nowrap;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .tab-btn:hover {
-            color: white;
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .tab-btn.active {
-            color: white;
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
-        .tab-btn.active::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #ff7e5f, #feb47b);
-        }
-        
-        .tab-content {
-            display: none;
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 0 0 15px 15px;
-        }
-        
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .student-form {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 10px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #2c3e50;
-            font-size: 16px;
-        }
-        
-        input, select {
-            width: 100%;
-            padding: 14px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        input:focus, select:focus {
-            border-color: #4a6491;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(74, 100, 145, 0.2);
-        }
-        
-        .evaluation-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 25px 0;
-            font-size: 15px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        
-        .evaluation-table th, .evaluation-table td {
-            border: 1px solid #e0e0e0;
-            padding: 12px;
-            text-align: center;
-        }
-        
-        .evaluation-table th {
-            background: linear-gradient(135deg, #4a6491, #2c3e50);
-            color: white;
-            font-weight: 600;
-            font-size: 15px;
-        }
-        
-        .evaluation-table tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        
-        .evaluation-table tr:hover {
-            background-color: #f0f4ff;
-        }
-        
-        .evaluation-table input {
-            width: 60px;
-            text-align: center;
-            margin: 0 auto;
-            padding: 8px;
-            font-weight: 600;
-        }
-        
-        .summary {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 25px;
-            border: 2px solid #e0e0e0;
-        }
-        
-        .summary-title {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #2c3e50;
-            font-weight: 700;
-            font-size: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px dashed #ccc;
-        }
-        
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-        
-        .summary-item {
-            background-color: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .summary-item .label {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        .summary-item .value {
-            font-weight: 700;
-            font-size: 18px;
-            color: #4a6491;
-        }
-        
-        .summary-item.total {
-            background: linear-gradient(135deg, #4a6491, #2c3e50);
-            color: white;
-        }
-        
-        .summary-item.total .value {
-            color: white;
-            font-size: 22px;
-        }
-        
-        .actions {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 30px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        
-        .btn {
-            padding: 15px 30px;
-            background: linear-gradient(135deg, #4a6491, #2c3e50);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }
-        
-        .btn:active {
-            transform: translateY(0);
-        }
-        
-        .btn-print {
-            background: linear-gradient(135deg, #2c3e50, #1c2e40);
-        }
-        
-        .btn-share {
-            background: linear-gradient(135deg, #00b09b, #96c93d);
-        }
-        
-        .btn-reset {
-            background: linear-gradient(135deg, #ff7e5f, #feb47b);
-        }
-        
-        .btn-upload {
-            background: linear-gradient(135deg, #8E44AD, #9B59B6);
-        }
-        
-        .share-options {
-            display: none;
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            border: 2px solid #e0e0e0;
-        }
-        
-        .share-options.active {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        .share-title {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #2c3e50;
-            font-weight: 700;
-            font-size: 20px;
-        }
-        
-        .share-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .share-btn {
-            padding: 12px 25px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .share-btn.email {
-            background: linear-gradient(135deg, #ea4335, #d14836);
-            color: white;
-        }
-        
-        .share-btn.pdf {
-            background: linear-gradient(135deg, #4285f4, #346ac3);
-            color: white;
-        }
-        
-        .share-btn.whatsapp {
-            background: linear-gradient(135deg, #25d366, #128c7e);
-            color: white;
-        }
-        
-        .share-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
-        }
-        
-        .upload-container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
-            text-align: center;
-            border: 3px dashed #8E44AD;
-        }
-        
-        .upload-title {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            font-size: 24px;
-            font-weight: 700;
-        }
-        
-        .upload-icon {
-            font-size: 60px;
-            color: #8E44AD;
-            margin-bottom: 20px;
-        }
-        
-        .upload-text {
-            color: #555;
-            margin-bottom: 25px;
-            font-size: 16px;
-        }
-        
-        .file-input {
-            display: none;
-        }
-        
-        .file-label {
-            display: inline-block;
-            padding: 15px 30px;
-            background: linear-gradient(135deg, #8E44AD, #9B59B6);
-            color: white;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-        
-        .file-label:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }
-        
-        .uploaded-files {
-            margin-top: 30px;
-            text-align: left;
-        }
-        
-        .file-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-        }
-        
-        .file-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .file-icon {
-            font-size: 24px;
-            color: #8E44AD;
-        }
-        
-        .file-name {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        
-        .file-size {
-            color: #777;
-            font-size: 14px;
-        }
-        
-        .file-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .file-btn {
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-        
-        .file-btn.view {
-            background: linear-gradient(135deg, #4a6491, #2c3e50);
-            color: white;
-            border: none;
-        }
-        
-        .file-btn.delete {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-            color: white;
-            border: none;
-        }
-        
-        @media (max-width: 992px) {
-            .tabs {
-                flex-wrap: wrap;
-            }
-            
-            .tab-btn {
-                flex: 1 0 33.33%;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .header-info {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .tab-btn {
-                flex: 1 0 50%;
-                padding: 15px;
-                font-size: 14px;
-            }
-            
-            .student-form {
-                grid-template-columns: 1fr;
-            }
-            
-            .evaluation-table {
-                font-size: 13px;
-                display: block;
-                overflow-x: auto;
-            }
-            
-            .actions {
-                flex-direction: column;
-            }
-            
-            .btn {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .share-buttons {
-                flex-direction: column;
-            }
-            
-            .share-btn {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .file-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-            
-            .file-actions {
-                width: 100%;
-                justify-content: space-between;
-            }
-            
-            .file-btn {
-                flex: 1;
-                text-align: center;
-            }
-        }
-        
-        .current-selection {
-            background-color: #e3f2fd;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border-right: 5px solid #4a6491;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .current-selection i {
-            color: #4a6491;
-            font-size: 20px;
-        }
-        
-        .upload-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 25px;
-            background: linear-gradient(135deg, #00b09b, #96c93d);
-            color: white;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 1000;
-            transform: translateX(100%);
-            transition: transform 0.5s ease;
-        }
-        
-        .upload-notification.show {
-            transform: translateX(0);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>نظام إدارة تقارير ودرجات الطلاب - تقنية المعلومات</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --secondary-color: #0ea5e9;
+      --accent-color: #3b82f6;
+      --light-color: #f0f9ff;
+      --dark-color: #1e3a8a;
+      --success-color: #10b981;
+      --warning-color: #f59e0b;
+      --danger-color: #ef4444;
+      --gray-color: #6b7280;
+      --light-gray: #f3f4f6;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f7fa 100%);
+      padding: 20px;
+      direction: rtl;
+      color: #1f2937;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      padding: 25px;
+      backdrop-filter: blur(10px);
+    }
+    
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--light-color);
+    }
+    
+    h1 {
+      font-size: 32px;
+      color: var(--dark-color);
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    
+    .subtitle {
+      font-size: 18px;
+      color: var(--gray-color);
+      margin-bottom: 20px;
+    }
+    
+    .instructions {
+      background-color: var(--light-color);
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+      border-right: 4px solid var(--primary-color);
+    }
+    
+    .instructions h3 {
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .instructions p {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+    
+    .instructions ul {
+      padding-right: 20px;
+      margin-top: 10px;
+    }
+    
+    .instructions li {
+      margin-bottom: 5px;
+    }
+    
+    .control-panel {
+      background: var(--light-color);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 25px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--dark-color);
+      font-size: 16px;
+    }
+    
+    .input-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    select, input[type="text"], input[type="file"] {
+      flex: 1;
+      min-width: 250px;
+      padding: 12px 15px;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 16px;
+      background: white;
+    }
+    
+    select:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+    
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Cairo', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    .btn-primary {
+      background: var(--primary-color);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--dark-color);
+    }
+    
+    .btn-secondary {
+      background: var(--secondary-color);
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: var(--primary-color);
+    }
+    
+    .btn-success {
+      background: var(--success-color);
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background: #0da271;
+    }
+    
+    .btn-danger {
+      background: var(--danger-color);
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+    
+    .actions-container {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    
+    .table-container {
+      overflow-x: auto;
+      margin-bottom: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      min-width: 800px;
+    }
+    
+    th, td {
+      border: 1px solid #e5e7eb;
+      padding: 14px;
+      text-align: center;
+    }
+    
+    th {
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #f9fafb;
+    }
+    
+    tr:hover {
+      background-color: #f0f9ff;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid var(--light-color);
+      color: var(--gray-color);
+      font-size: 16px;
+    }
+    
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 2px solid var(--primary-color);
+      border-radius: 16px;
+      padding: 25px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      display: none;
+      z-index: 1000;
+      width: 90%;
+      max-width: 500px;
+    }
+    
+    .popup h2 {
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    
+    .popup-options {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    
+    .popup-options label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: normal;
+      cursor: pointer;
+    }
+    
+    .popup-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    
+    .social-share {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    .social-btn {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      transition: transform 0.3s ease;
+    }
+    
+    .social-btn:hover {
+      transform: translateY(-3px);
+    }
+    
+    .whatsapp { background: #25D366; }
+    .telegram { background: #0088cc; }
+    .twitter { background: #1DA1F2; }
+    
+    .notification {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 15px 25px;
+      border-radius: 8px;
+      background: var(--success-color);
+      color: white;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      display: none;
+      z-index: 1100;
+      font-weight: 600;
+    }
+    
+    .file-info {
+      background-color: #e6f7ff;
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+      border-right: 3px solid var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .file-info i {
+      color: var(--primary-color);
+      font-size: 20px;
+    }
+    
+    .file-info span {
+      font-weight: 600;
+      color: var(--dark-color);
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+      
+      h1 {
+        font-size: 26px;
+      }
+      
+      .input-group {
+        flex-direction: column;
+      }
+      
+      select, input[type="text"], input[type="file"] {
+        min-width: 100%;
+      }
+      
+      .actions-container {
+        flex-direction: column;
+      }
+      
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>نظام تقييم الطلاب لجميع الصفوف</h1>
-            <p>استمارة تقييم طلبة الحلقة الثانية لمادة تقنية المعلومات للعام الدراسي 2025 / 2026م</p>
-            
-            <div class="header-info">
-                <div class="info-item">
-                    <i class="fas fa-user-graduate"></i>
-                    <span>الصفوف: الخامس والسادس</span>
-                </div>
-                <div class="info-item">
-                    <i class="fas fa-book"></i>
-                    <span>مادة: تقنية المعلومات</span>
-                </div>
-                <div class="info-item">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span>العام: 2025 / 2026</span>
-                </div>
-            </div>
-        </header>
-        
-        <div class="current-selection">
-            <i class="fas fa-check-circle"></i>
-            <span>الورقة المحددة حالياً: <strong>الفصل الدراسي الأول</strong></span>
-        </div>
-        
-        <div class="upload-container">
-            <div class="upload-icon">
-                <i class="fas fa-file-excel"></i>
-            </div>
-            <h2 class="upload-title">رفع ملف Excel</h2>
-            <p class="upload-text">يمكنك رفع ملف Excel الخاص بك لتعبئة البيانات تلقائياً</p>
-            
-            <input type="file" id="file-upload" class="file-input" accept=".xlsx, .xls">
-            <label for="file-upload" class="file-label">
-                <i class="fas fa-upload"></i> اختر ملف Excel
-            </label>
-            
-            <div class="uploaded-files">
-                <div class="file-item">
-                    <div class="file-info">
-                        <i class="fas fa-file-excel file-icon"></i>
-                        <div>
-                            <div class="file-name">تقييم الفصل الأول.xlsx</div>
-                            <div class="file-size">2.4 MB</div>
-                        </div>
-                    </div>
-                    <div class="file-actions">
-                        <button class="file-btn view"><i class="fas fa-eye"></i> عرض</button>
-                        <button class="file-btn delete"><i class="fas fa-trash"></i> حذف</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="tabs-container">
-            <div class="tabs">
-                <button class="tab-btn active" onclick="openTab('first-semester')">
-                    <i class="fas fa-file-alt"></i> الفصل الأول
-                </button>
-                <button class="tab-btn" onclick="openTab('second-semester')">
-                    <i class="fas fa-file-alt"></i> الفصل الثاني
-                </button>
-                <button class="tab-btn" onclick="openTab('annual-record')">
-                    <i class="fas fa-chart-line"></i> السجل السنوي
-                </button>
-                <button class="tab-btn" onclick="openTab('project-form')">
-                    <i class="fas fa-project-diagram"></i> استمارة المشروع
-                </button>
-            </div>
-            
-            <div id="first-semester" class="tab-content active">
-                <h2><i class="fas fa-file-alt"></i> الفصل الدراسي الأول</h2>
-                
-                <div class="student-form">
-                    <div class="form-group">
-                        <label for="class"><i class="fas fa-users"></i> الصف:</label>
-                        <select id="class">
-                            <option value="">اختر الصف</option>
-                            <option value="5">الصف الخامس</option>
-                            <option value="6">الصف السادس</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="section"><i class="fas fa-layer-group"></i> الشعبة:</label>
-                        <input type="text" id="section">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="student-name"><i class="fas fa-user"></i> اسم الطالب:</label>
-                        <input type="text" id="student-name">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="student-number"><i class="fas fa-hashtag"></i> الرقم التسلسلي:</label>
-                        <input type="number" id="student-number" min="1">
-                    </div>
-                </div>
-                
-                <table class="evaluation-table">
-                    <thead>
-                        <tr>
-                            <th rowspan="2">م</th>
-                            <th rowspan="2">اسم الطالب</th>
-                            <th colspan="2">الحوار</th>
-                            <th rowspan="2">المجموع</th>
-                            <th colspan="4">الأسئلة القصيرة</th>
-                            <th rowspan="2">المجموع</th>
-                            <th colspan="2">الأنشطة العملية</th>
-                            <th rowspan="2">المجموع</th>
-                            <th rowspan="2">المشروع</th>
-                            <th rowspan="2">الدرجة الكلية</th>
-                        </tr>
-                        <tr>
-                            <th>10</th>
-                            <th>10</th>
-                            <th>5</th>
-                            <th>5</th>
-                            <th>5</th>
-                            <th>5</th>
-                            <th>20</th>
-                            <th>20</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>محمد</td>
-                            <td><input type="number" min="0" max="10" value="10"></td>
-                            <td><input type="number" min="0" max="10" value="7"></td>
-                            <td>17</td>
-                            <td><input type="number" min="0" max="5" value="5"></td>
-                            <td><input type="number" min="0" max="5" value="5"></td>
-                            <td><input type="number" min="0" max="5" value="5"></td>
-                            <td><input type="number" min="0" max="5" value="5"></td>
-                            <td>20</td>
-                            <td><input type="number" min="0" max="20" value="20"></td>
-                            <td><input type="number" min="0" max="20" value="16"></td>
-                            <td>36</td>
-                            <td><input type="number" min="0" max="20" value="10"></td>
-                            <td>83</td>
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <div class="summary">
-                    <div class="summary-title">ملخص الدرجات - الفصل الأول</div>
-                    <div class="summary-grid">
-                        <div class="summary-item">
-                            <span class="label">الحوار:</span>
-                            <span class="value">17/20</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="label">الأسئلة القصيرة:</span>
-                            <span class="value">20/20</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="label">الأنشطة العملية:</span>
-                            <span class="value">36/40</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="label">المشروع:</span>
-                            <span class="value">10/20</span>
-                        </div>
-                        <div class="summary-item total">
-                            <span class="label">المجموع الكلي:</span>
-                            <span class="value">83/100</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="actions">
-                    <button class="btn">
-                        <i class="fas fa-save"></i> حفظ البيانات
-                    </button>
-                    <button class="btn btn-upload" onclick="showUploadNotification()">
-                        <i class="fas fa-file-excel"></i> رفع ملف Excel
-                    </button>
-                    <button class="btn btn-share" onclick="toggleShareOptions()">
-                        <i class="fas fa-share-alt"></i> مشاركة النتائج
-                    </button>
-                    <button class="btn btn-print">
-                        <i class="fas fa-print"></i> طباعة النموذج
-                    </button>
-                    <button class="btn btn-reset">
-                        <i class="fas fa-redo"></i> اعادة تعيين
-                    </button>
-                </div>
-                
-                <div id="share-options" class="share-options">
-                    <div class="share-title">اختر طريقة المشاركة</div>
-                    <div class="share-buttons">
-                        <button class="share-btn email">
-                            <i class="fas fa-envelope"></i> إرسال عبر البريد الإلكتروني
-                        </button>
-                        <button class="share-btn pdf">
-                            <i class="fas fa-file-pdf"></i> تصدير إلى PDF
-                        </button>
-                        <button class="share-btn whatsapp">
-                            <i class="fab fa-whatsapp"></i> مشاركة عبر واتساب
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="second-semester" class="tab-content">
-                <h2><i class="fas fa-file-alt"></i> الفصل الدراسي الثاني</h2>
-                <p>سيتم عرض نموذج الفصل الدراسي الثاني هنا. هذا النموذج مشابه لنموذج الفصل الأول ولكن ببيانات الفصل الثاني.</p>
-                
-                <div class="summary">
-                    <div class="summary-title">ملخص الدرجات - الفصل الثاني</div>
-                    <div class="summary-grid">
-                        <div class="summary-item">
-                            <span class="label">الحوار:</span>
-                            <span class="value">15/20</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="label">الأسئلة القصيرة:</span>
-                            <span class="value">18/20</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="label">الأنشطة العملية:</span>
-                            <span class="value">38/40</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="label">المشروع:</span>
-                            <span class="value">18/20</span>
-                        </div>
-                        <div class="summary-item total">
-                            <span class="label">المجموع الكلي:</span>
-                            <span class="value">89/100</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="annual-record" class="tab-content">
-                <h2><i class="fas fa-chart-line"></i> السجل السنوي</h2>
-                <p>هنا يتم عرض السجل السنوي للطالب مع نتائج الفصلين الدراسيين ومتوسط العام.</p>
-                
-                <div class="summary">
-                    <div class="summary-title">التقييم السنوي</div>
-                    <div class="summary-grid">
-                        <div class="summary-item">
-                            <span class="label">الفصل الدراسي الأول:</span>
-                            <span class="value">83/100</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="label">الفصل الدراسي الثاني:</span>
-                            <span class="value">89/100</span>
-                        </div>
-                        <div class="summary-item total">
-                            <span class="label">المعدل السنوي:</span>
-                            <span class="value">86/100</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="label">التقدير:</span>
-                            <span class="value">جيد جداً</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="project-form" class="tab-content">
-                <h2><i class="fas fa-project-diagram"></i> استمارة المشروع المقترح</h2>
-                <p>هنا يتم عرض استمارة تقييم المشروع في مادة تقنية المعلومات.</p>
-                
-                <div class="summary">
-                    <div class="summary-title">تقييم المشروع</div>
-                    <div class="summary-grid">
-                        <div class="summary-item">
-                            <span class="label">التخطيط:</span>
-                            <span class="value">4/5</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="label">التنفيذ العملي:</span>
-                            <span class="value">6/7</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="label">الاتصال وعمل الفريق:</span>
-                            <span class="value">2.5/3</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="label">التحليل والاستنتاج:</span>
-                            <span class="value">4/5</span>
-                        </div>
-                        <div class="summary-item total">
-                            <span class="label">المجموع الكلي:</span>
-                            <span class="value">16.5/20</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-graduation-cap"></i> نظام إدارة تقارير ودرجات الطلاب</h1>
+      <p class="subtitle">مادة تقنية المعلومات - إدارة وعرض نتائج الطلاب</p>
+    </header>
+    
+    <div class="instructions">
+      <h3><i class="fas fa-info-circle"></i> إرشادات الاستخدام</h3>
+      <p>مرحبًا بك في نظام إدارة تقارير الطلاب. يرجى اتباع الخطوات التالية:</p>
+      <ul>
+        <li>قم بتحميل ملف Excel الخاص بالدرجات</li>
+        <li>اختر الصف أو الشعبة المطلوبة</li>
+        <li>اختر ورقة العمل المناسبة</li>
+        <li>استخدم خيارات التصدير والمشاركة بعد تحميل البيانات</li>
+      </ul>
+      <p><strong>ملاحظة:</strong> للتعديل على البيانات، يرجى تحديث ملف Excel الأصلي وإعادة رفعه إلى النظام.</p>
     </div>
-
-    <div class="upload-notification" id="upload-notification">
-        <i class="fas fa-check-circle"></i>
-        <span>تم رفع ملف Excel بنجاح!</span>
+    
+    <div class="control-panel">
+      <div class="form-group">
+        <label for="fileInput"><i class="fas fa-file-excel"></i> اختر ملف الإكسل:</label>
+        <div class="input-group">
+          <input type="file" id="fileInput" accept=".xlsx, .xls">
+        </div>
+      </div>
+      
+      <div id="selectedFileInfo" class="file-info" style="display: none;">
+        <i class="fas fa-file-excel"></i>
+        <span id="fileName">لم يتم اختيار ملف بعد</span>
+      </div>
+      
+      <div class="form-group">
+        <label for="classSelect"><i class="fas fa-users"></i> اختر الصف أو الشعبة:</label>
+        <div class="input-group">
+          <select id="classSelect">
+            <option value="">-- يرجى اختيار ملف أولا --</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="sheetSelect"><i class="fas fa-layer-group"></i> اختر ورقة العمل:</label>
+        <div class="input-group">
+          <select id="sheetSelect">
+            <option value="">-- يرجى اختيار ملف أولا --</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="search"><i class="fas fa-search"></i> بحث باسم الطالب:</label>
+        <div class="input-group">
+          <input type="text" id="search" placeholder="أدخل اسم الطالب للبحث...">
+        </div>
+      </div>
+      
+      <div class="actions-container">
+        <button class="btn btn-primary" onclick="loadSelectedSheets()">
+          <i class="fas fa-sync"></i> تحميل البيانات
+        </button>
+        <button class="btn btn-secondary" onclick="showExportOptions()">
+          <i class="fas fa-download"></i> خيارات التصدير
+        </button>
+        <button class="btn btn-success" onclick="shareReport()">
+          <i class="fas fa-share-alt"></i> مشاركة النتائج
+        </button>
+        <button class="btn btn-danger" onclick="clearData()">
+          <i class="fas fa-trash"></i> مسح البيانات
+        </button>
+      </div>
     </div>
+    
+    <div class="table-container">
+      <table id="reportTable">
+        <thead>
+          <tr id="headerRow"></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    
+    <div class="social-share" id="socialShare" style="display: none;">
+      <a href="#" class="social-btn whatsapp" title="مشاركة عبر واتساب"><i class="fab fa-whatsapp"></i></a>
+      <a href="#" class="social-btn telegram" title="مشاركة عبر تيليجرام"><i class="fab fa-telegram"></i></a>
+      <a href="#" class="social-btn twitter" title="مشاركة عبر تويتر"><i class="fab fa-twitter"></i></a>
+    </div>
+    
+    <div class="footer">
+      <p>تم التصميم والبرمجة بواسطة الأستاذ أحمد الضامري</p>
+      <p>نظام إدارة تقارير ودرجات الطلاب - تقنية المعلومات</p>
+    </div>
+  </div>
+  
+  <div id="popup" class="popup">
+    <h2><i class="fas fa-download"></i> خيارات التصدير</h2>
+    <div class="popup-options">
+      <label>
+        <input type="radio" name="exportType" value="all" checked>
+        <span>تصدير كل البيانات</span>
+      </label>
+      <label>
+        <input type="radio" name="exportType" value="filtered">
+        <span>تصدير البيانات المعروضة فقط</span>
+      </label>
+    </div>
+    <div class="popup-actions">
+      <button class="btn btn-primary" onclick="previewBeforeExport()">
+        <i class="fas fa-eye"></i> معاينة
+      </button>
+      <button class="btn btn-secondary" onclick="printReport()">
+        <i class="fas fa-print"></i> طباعة
+      </button>
+      <button class="btn btn-success" onclick="downloadPDF()">
+        <i class="fas fa-file-pdf"></i> PDF
+      </button>
+      <button class="btn btn-primary" onclick="downloadExcel()">
+        <i class="fas fa-file-excel"></i> Excel
+      </button>
+      <button class="btn btn-danger" onclick="closePopup()">
+        <i class="fas fa-times"></i> إلغاء
+      </button>
+    </div>
+  </div>
+  
+  <div id="notification" class="notification"></div>
 
-    <script>
-        function openTab(tabId) {
-            // إخفاء جميع محتويات التبويبات
-            const tabContents = document.getElementsByClassName('tab-content');
-            for (let i = 0; i < tabContents.length; i++) {
-                tabContents[i].classList.remove('active');
-            }
-            
-            // إلغاء تنشيط جميع أزرار التبويبات
-            const tabButtons = document.getElementsByClassName('tab-btn');
-            for (let i = 0; i < tabButtons.length; i++) {
-                tabButtons[i].classList.remove('active');
-            }
-            
-            // تفعيل التبويب المحدد
-            document.getElementById(tabId).classList.add('active');
-            
-            // البحث عن الزر المناسب وتفعيله
-            const buttons = document.getElementsByClassName('tab-btn');
-            for (let i = 0; i < buttons.length; i++) {
-                if (buttons[i].getAttribute('onclick').includes(tabId)) {
-                    buttons[i].classList.add('active');
-                    break;
-                }
-            }
-            
-            // تحديث الورقة المحددة حالياً
-            updateCurrentSelection(tabId);
-        }
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const classSelect = document.getElementById('classSelect');
+    const sheetSelect = document.getElementById('sheetSelect');
+    const searchInput = document.getElementById('search');
+    const headerRow = document.getElementById('headerRow');
+    const tbody = document.querySelector('#reportTable tbody');
+    const popup = document.getElementById('popup');
+    const notification = document.getElementById('notification');
+    const socialShare = document.getElementById('socialShare');
+    const selectedFileInfo = document.getElementById('selectedFileInfo');
+    const fileNameElement = document.getElementById('fileName');
+    
+    let workbooks = [];
+    let allData = [];
+    let reportType = 'regular';
+    let currentFileName = '';
+
+    fileInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files);
+      workbooks = [];
+      classSelect.innerHTML = '<option value="">-- اختر ملف --</option>';
+      sheetSelect.innerHTML = '<option value="">-- اختر ملف أولا --</option>';
+      
+      if (files.length === 0) {
+        selectedFileInfo.style.display = 'none';
+        return;
+      }
+      
+      for (const file of files) {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        workbooks.push({ workbook, filename: file.name });
         
-        function updateCurrentSelection(tabId) {
-            const selectionText = document.querySelector('.current-selection strong');
-            let tabName = "";
-            
-            switch(tabId) {
-                case 'first-semester':
-                    tabName = "الفصل الدراسي الأول";
-                    break;
-                case 'second-semester':
-                    tabName = "الفصل الدراسي الثاني";
-                    break;
-                case 'annual-record':
-                    tabName = "السجل السنوي";
-                    break;
-                case 'project-form':
-                    tabName = "استمارة المشروع";
-                    break;
-            }
-            
-            selectionText.textContent = tabName;
-        }
+        const option = document.createElement('option');
+        option.value = workbooks.length - 1;
+        option.textContent = file.name;
+        classSelect.appendChild(option);
+      }
+      
+      if (workbooks.length > 0) {
+        populateSheets(0);
+        // عرض اسم الملف المختار
+        currentFileName = workbooks[0].filename;
+        fileNameElement.textContent = currentFileName;
+        selectedFileInfo.style.display = 'flex';
+        showNotification('تم تحميل الملف بنجاح! يرجى اختيار الصف والشعبة', 'success');
+      }
+    });
+
+    classSelect.addEventListener('change', () => {
+      const selectedIndex = parseInt(classSelect.value);
+      if (!isNaN(selectedIndex) && selectedIndex >= 0) {
+        populateSheets(selectedIndex);
+        currentFileName = workbooks[selectedIndex].filename;
+        fileNameElement.textContent = currentFileName;
+      }
+    });
+
+    searchInput.addEventListener('input', () => {
+      const term = searchInput.value.trim().toLowerCase();
+      if (term === '') {
+        if (reportType === 'annual') renderAnnualTable(allData);
+        else renderRegularTable(allData);
+        return;
+      }
+      
+      const filtered = allData.filter(row => 
+        row.name && row.name.toLowerCase().includes(term)
+      );
+      
+      if (reportType === 'annual') renderAnnualTable(filtered);
+      else renderRegularTable(filtered);
+    });
+
+    function populateSheets(classIndex) {
+      const wb = workbooks[classIndex].workbook;
+      sheetSelect.innerHTML = '';
+      
+      wb.SheetNames.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        sheetSelect.appendChild(option);
+      });
+    }
+
+    function loadSelectedSheets() {
+      const selectedIndex = parseInt(classSelect.value);
+      if (isNaN(selectedIndex) || selectedIndex < 0) {
+        showNotification('يرجى اختيار ملف أولاً', 'error');
+        return;
+      }
+      
+      const selectedWorkbook = workbooks[selectedIndex];
+      const selectedSheet = sheetSelect.value;
+      
+      if (!selectedSheet) {
+        showNotification('يرجى اختيار ورقة عمل', 'error');
+        return;
+      }
+
+      allData = [];
+      
+      const sheet = selectedWorkbook.workbook.Sheets[selectedSheet];
+      const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      
+      if (selectedSheet.includes("سجل")) {
+        reportType = 'annual';
+        const data = json.slice(5).map(row => {
+          const term1 = parseFloat(row[4]) || 0;
+          const term2 = parseFloat(row[9]) || 0;
+          return {
+            name: row[1],
+            term1Grade: row[4],
+            term1Level: row[5],
+            term2Grade: row[9],
+            term2Level: row[10],
+            finalGrade: ((term1 + term2) / 2).toFixed(1)
+          };
+        }).filter(entry => entry.name);
         
-        function toggleShareOptions() {
-            const shareOptions = document.getElementById('share-options');
-            shareOptions.classList.toggle('active');
-        }
+        allData = allData.concat(data);
+      } else {
+        reportType = 'regular';
+        const data = json.slice(5).map(row => ({
+          name: row[1],
+          oral1: row[2],
+          oral2: row[3],
+          practical1: row[5],
+          practical2: row[6],
+          project: row[8],
+          exam: row[9],
+          total: row[10]
+        })).filter(entry => entry.name);
         
-        function showUploadNotification() {
-            const notification = document.getElementById('upload-notification');
-            notification.classList.add('show');
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
-        }
+        allData = allData.concat(data);
+      }
+
+      if (reportType === 'annual') renderAnnualTable(allData);
+      else renderRegularTable(allData);
+      
+      socialShare.style.display = 'flex';
+      showNotification('تم تحميل البيانات بنجاح', 'success');
+    }
+
+    function renderAnnualTable(data) {
+      headerRow.innerHTML = `
+        <th>اسم الطالب</th>
+        <th>درجة الفصل الأول</th>
+        <th>مستوى الفصل الأول</th>
+        <th>درجة الفصل الثاني</th>
+        <th>مستوى الفصل الثاني</th>
+        <th>نهاية العام</th>
+        <th>المستوى العام</th>
+      `;
+      
+      tbody.innerHTML = '';
+      
+      data.forEach(row => {
+        const finalGrade = parseFloat(row.finalGrade);
+        let generalLevel = '';
         
-        // إضافة التفاعل لحقول الإدخال
-        const inputs = document.querySelectorAll('input');
-        inputs.forEach(input => {
-            input.addEventListener('change', calculateTotals);
-        });
+        if (finalGrade >= 90) generalLevel = 'ممتاز';
+        else if (finalGrade >= 80) generalLevel = 'جيد جدًا';
+        else if (finalGrade >= 65) generalLevel = 'جيد';
+        else if (finalGrade >= 50) generalLevel = 'مقبول';
+        else generalLevel = 'ضعيف';
         
-        function calculateTotals() {
-            // هنا سيتم إضافة دوال حساب المجاميع
-            console.log('Calculating totals...');
-        }
-        
-        // إغلاق خيارات المشاركة عند النقر خارجها
-        document.addEventListener('click', function(event) {
-            const shareOptions = document.getElementById('share-options');
-            const shareBtn = document.querySelector('.btn-share');
-            
-            if (shareOptions.classList.contains('active') && 
-                !shareOptions.contains(event.target) && 
-                event.target !== shareBtn &&
-                !shareBtn.contains(event.target)) {
-                shareOptions.classList.remove('active');
-            }
-        });
-        
-        // معالجة رفع الملف
-        const fileInput = document.getElementById('file-upload');
-        fileInput.addEventListener('change', function(e) {
-            if (e.target.files.length > 0) {
-                const file = e.target.files[0];
-                const fileName = file.name;
-                const fileSize = (file.size / 1024 / 1024).toFixed(2);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.name || ''}</td>
+          <td>${row.term1Grade || ''}</td>
+          <td>${row.term1Level || ''}</td>
+          <td>${row.term2Grade || ''}</td>
+          <td>${row.term2Level || ''}</td>
+          <td>${row.finalGrade || ''}</td>
+          <td>${generalLevel}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
-                // استخدم SheetJS لقراءة الملف
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    const data = evt.target.result;
-                    const workbook = XLSX.read(data, {type: 'binary'});
-                    // نفترض أن المرجع يعتمد على اسم الورقة أو رؤوس الأعمدة
-                    let refInfo = detectReference(workbook);
-                    updateHeaderInfo(refInfo);
-                };
-                reader.readAsBinaryString(file);
+    function renderRegularTable(data) {
+      headerRow.innerHTML = `
+        <th>اسم الطالب</th>
+        <th>الأعمال الشفوية 1</th>
+        <th>الأعمال الشفوية 2</th>
+        <th>النشاط العملي 1</th>
+        <th>النشاط العملي 2</th>
+        <th>درجة المشروع</th>
+        <th>درجة الاختبار</th>
+        <th>المجموع الكلي للدرجات</th>
+      `;
+      
+      tbody.innerHTML = '';
+      
+      data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.name || ''}</td>
+          <td>${row.oral1 || 0} / 10</td>
+          <td>${row.oral2 || 0} / 10</td>
+          <td>${row.practical1 || 0} / 20</td>
+          <td>${row.practical2 || 0} / 20</td>
+          <td>${row.project || 0} / 20</td>
+          <td>${row.exam || 0} / 20</td>
+          <td>${row.total || 0}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
-                // عرض إشعار برفع الملف
-                showUploadNotification();
+    function showExportOptions() {
+      if (allData.length === 0) {
+        showNotification('لا توجد بيانات لعرضها', 'error');
+        return;
+      }
+      popup.style.display = 'block';
+    }
 
-                // تحديث قائمة الملفات
-                const fileList = document.querySelector('.uploaded-files');
-                fileList.innerHTML = `
-                    <div class="file-item">
-                        <div class="file-info">
-                            <i class="fas fa-file-excel file-icon"></i>
-                            <div>
-                                <div class="file-name">${fileName}</div>
-                                <div class="file-size">${fileSize} MB</div>
-                            </div>
-                        </div>
-                        <div class="file-actions">
-                            <button class="file-btn view"><i class="fas fa-eye"></i> عرض</button>
-                            <button class="file-btn delete"><i class="fas fa-trash"></i> حذف</button>
-                        </div>
-                    </div>
-                `;
-            }
-        });
+    function closePopup() {
+      popup.style.display = 'none';
+    }
 
-        // تحميل ملفات الإكسل المرجعية عند بدء الصفحة
-        const referenceFiles = [
-            '1-4.xlsx',
-            '5-6.xlsx',
-            '7-10.xlsx',
-            '11-12.xlsx'
-        ];
-        const referenceWorkbooks = {};
+    function previewBeforeExport() {
+      closePopup();
+      window.print();
+    }
 
-        window.addEventListener('DOMContentLoaded', () => {
-            referenceFiles.forEach(file => {
-                fetch(file)
-                    .then(res => res.arrayBuffer())
-                    .then(data => {
-                        const workbook = XLSX.read(new Uint8Array(data), {type: 'array'});
-                        referenceWorkbooks[file] = workbook;
-                    });
-            });
-        });
+    function printReport() {
+      closePopup();
+      const exportType = document.querySelector('input[name="exportType"]:checked').value;
+      
+      if (exportType === 'filtered') {
+        const originalContent = document.body.innerHTML;
+        const tableContent = document.getElementById('reportTable').outerHTML;
+        document.body.innerHTML = tableContent;
+        window.print();
+        document.body.innerHTML = originalContent;
+        window.location.reload();
+      } else {
+        window.print();
+      }
+    }
 
-        // دالة لاكتشاف المرجع بناءً على المقارنة مع الملفات المرجعية
-        function detectReference(workbook) {
-            // استخراج رؤوس الأعمدة من الملف المرفوع
-            const sheetNames = workbook.SheetNames;
-            const firstSheet = workbook.Sheets[sheetNames[0]];
-            const headers = XLSX.utils.sheet_to_json(firstSheet, {header:1})[0] || [];
-            // مقارنة مع كل ملف مرجعي
-            for (const [file, refWb] of Object.entries(referenceWorkbooks)) {
-                const refSheet = refWb.Sheets[refWb.SheetNames[0]];
-                const refHeaders = XLSX.utils.sheet_to_json(refSheet, {header:1})[0] || [];
-                // إذا تطابق عدد الأعمدة أو بعض الرؤوس
-                const match = headers.length === refHeaders.length && headers.every((h,i)=>String(h).trim()===String(refHeaders[i]).trim());
-                if (match) {
-                    if (file==='1-4.xlsx') return {grade:'الصفوف: الأول إلى الرابع',subject:'تقنية المعلومات',year:'2025 / 2026'};
-                    if (file==='5-6.xlsx') return {grade:'الصفوف: الخامس والسادس',subject:'تقنية المعلومات',year:'2025 / 2026'};
-                    if (file==='7-10.xlsx') return {grade:'الصفوف: السابع إلى العاشر',subject:'تقنية المعلومات',year:'2025 / 2026'};
-                    if (file==='11-12.xlsx') return {grade:'الصفوف: الحادي عشر والثاني عشر',subject:'تقنية المعلومات',year:'2025 / 2026'};
-                }
-            }
-            // fallback
-            let grade = '';
-            if (sheetNames[0].includes('1-4') || headers.some(h=>String(h).includes('الأول'))) grade = 'الصفوف: الأول إلى الرابع';
-            else if (sheetNames[0].includes('5-6') || headers.some(h=>String(h).includes('الخامس'))) grade = 'الصفوف: الخامس والسادس';
-            else if (sheetNames[0].includes('7-10') || headers.some(h=>String(h).includes('السابع'))) grade = 'الصفوف: السابع إلى العاشر';
-            else if (sheetNames[0].includes('11-12') || headers.some(h=>String(h).includes('الحادي'))) grade = 'الصفوف: الحادي عشر والثاني عشر';
-            else grade = 'صفوف غير محددة';
-            return {
-                grade,
-                subject: 'تقنية المعلومات',
-                year: '2025 / 2026'
-            };
-        }
+    function downloadPDF() {
+      closePopup();
+      const exportType = document.querySelector('input[name="exportType"]:checked').value;
+      const element = document.getElementById('reportTable');
+      
+      const opt = {
+        margin: 0.5,
+        filename: `تقرير_تقنية_المعلومات_${currentFileName}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+      
+      html2pdf().set(opt).from(element).save();
+    }
 
-        // دالة لتحديث معلومات الهيدر
-        function updateHeaderInfo(refInfo) {
-            document.querySelectorAll('.info-item')[0].querySelector('span').textContent = refInfo.grade;
-            document.querySelectorAll('.info-item')[1].querySelector('span').textContent = 'مادة: ' + refInfo.subject;
-            document.querySelectorAll('.info-item')[2].querySelector('span').textContent = 'العام: ' + refInfo.year;
-        }
-    </script>
+    function downloadExcel() {
+      closePopup();
+      const exportType = document.querySelector('input[name="exportType"]:checked').value;
+      
+      const wb = XLSX.utils.book_new();
+      const ws_data = [
+        [...headerRow.querySelectorAll('th')].map(th => th.innerText),
+        ...[...tbody.querySelectorAll('tr')].map(tr => 
+          [...tr.querySelectorAll('td')].map(td => td.innerText)
+        )
+      ];
+      
+      const ws = XLSX.utils.aoa_to_sheet(ws_data);
+      XLSX.utils.book_append_sheet(wb, ws, 'التقرير');
+      XLSX.writeFile(wb, `تقرير_تقنية_المعلومات_${currentFileName}.xlsx`);
+    }
+    
+    function shareReport() {
+      if (allData.length === 0) {
+        showNotification('لا توجد بيانات لمشاركتها', 'error');
+        return;
+      }
+      
+      const text = `تقارير ودرجات طلاب مادة تقنية المعلومات - ${new Date().toLocaleDateString('ar-EG')}`;
+      const url = window.location.href;
+      
+      // تحديث روابط المشاركة
+      document.querySelector('.whatsapp').setAttribute('href', `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`);
+      document.querySelector('.telegram').setAttribute('href', `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`);
+      document.querySelector('.twitter').setAttribute('href', `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`);
+      
+      showNotification('يمكنك مشاركة التقرير عبر الوسائل المتاحة', 'success');
+    }
+    
+    function clearData() {
+      if (confirm('هل أنت متأكد من أنك تريد مسح جميع البيانات؟')) {
+        allData = [];
+        tbody.innerHTML = '';
+        headerRow.innerHTML = '';
+        fileInput.value = '';
+        classSelect.innerHTML = '<option value="">-- اختر ملف --</option>';
+        sheetSelect.innerHTML = '<option value="">-- اختر ملف أولا --</option>';
+        searchInput.value = '';
+        socialShare.style.display = 'none';
+        selectedFileInfo.style.display = 'none';
+        showNotification('تم مسح جميع البيانات', 'success');
+      }
+    }
+    
+    function showNotification(message, type) {
+      notification.textContent = message;
+      notification.style.display = 'block';
+      
+      if (type === 'success') {
+        notification.style.backgroundColor = '#10b981';
+      } else if (type === 'error') {
+        notification.style.backgroundColor = '#ef4444';
+      } else {
+        notification.style.backgroundColor = '#3b82f6';
+      }
+      
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, 3000);
+    }
+
+    // إغلاق النافذة المنبثقة عند النقر خارجها
+    window.addEventListener('click', (e) => {
+      if (e.target === popup) {
+        closePopup();
+      }
+    });
+  </script>
 </body>
 </html>
