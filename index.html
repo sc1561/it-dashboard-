@@ -523,6 +523,7 @@
     let allData = [];
     let reportType = 'regular';
     let currentFileName = '';
+    let columnHeaders = [];
 
     fileInput.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files);
@@ -569,7 +570,7 @@
       const term = searchInput.value.trim().toLowerCase();
       if (term === '') {
         if (reportType === 'annual') renderAnnualTable(allData);
-        else renderRegularTable(allData);
+        else renderTable(allData);
         return;
       }
       
@@ -578,7 +579,7 @@
       );
       
       if (reportType === 'annual') renderAnnualTable(filtered);
-      else renderRegularTable(filtered);
+      else renderTable(filtered);
     });
 
     function populateSheets(classIndex) {
@@ -613,6 +614,11 @@
       const sheet = selectedWorkbook.workbook.Sheets[selectedSheet];
       const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
       
+      // استخراج عناوين الأعمدة من الصف الرابع (بناءً على هيكل ملف الإكسل)
+      if (json.length > 3) {
+        columnHeaders = json[3]; // الصف الرابع يحتوي على عناوين الأعمدة
+      }
+      
       if (selectedSheet.includes("سجل")) {
         reportType = 'annual';
         const data = json.slice(5).map(row => {
@@ -631,22 +637,20 @@
         allData = allData.concat(data);
       } else {
         reportType = 'regular';
-        const data = json.slice(5).map(row => ({
-          name: row[1],
-          oral1: row[2],
-          oral2: row[3],
-          practical1: row[5],
-          practical2: row[6],
-          project: row[8],
-          exam: row[9],
-          total: row[10]
-        })).filter(entry => entry.name);
+        // استخدام عناوين الأعمدة المستخرجة من ملف الإكسل
+        const data = json.slice(5).map(row => {
+          const rowData = {};
+          columnHeaders.forEach((header, index) => {
+            rowData[header] = row[index];
+          });
+          return rowData;
+        }).filter(entry => entry['اسم الطالب']);
         
         allData = allData.concat(data);
       }
 
       if (reportType === 'annual') renderAnnualTable(allData);
-      else renderRegularTable(allData);
+      else renderTable(allData);
       
       socialShare.style.display = 'flex';
       showNotification('تم تحميل البيانات بنجاح', 'success');
@@ -689,32 +693,48 @@
       });
     }
 
-    function renderRegularTable(data) {
-      headerRow.innerHTML = `
-        <th>اسم الطالب</th>
-        <th>الأعمال الشفوية 1</th>
-        <th>الأعمال الشفوية 2</th>
-        <th>النشاط العملي 1</th>
-        <th>النشاط العملي 2</th>
-        <th>درجة المشروع</th>
-        <th>درجة الاختبار</th>
-        <th>المجموع الكلي للدرجات</th>
-      `;
+    function renderTable(data) {
+      // استخدام عناوين الأعمدة المستخرجة من ملف الإكسل
+      let headersHTML = '';
+      if (columnHeaders && columnHeaders.length > 0) {
+        headersHTML = columnHeaders.map(header => `<th>${header}</th>`).join('');
+      } else {
+        // استخدام العناوين الافتراضية إذا لم تكن هناك عناوين محددة
+        headersHTML = `
+          <th>اسم الطالب</th>
+          <th>الأعمال الشفوية 1</th>
+          <th>الأعمال الشفوية 2</th>
+          <th>النشاط العملي 1</th>
+          <th>النشاط العملي 2</th>
+          <th>درجة المشروع</th>
+          <th>درجة الاختبار</th>
+          <th>المجموع الكلي للدرجات</th>
+        `;
+      }
       
+      headerRow.innerHTML = headersHTML;
       tbody.innerHTML = '';
       
       data.forEach(row => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${row.name || ''}</td>
-          <td>${row.oral1 || 0} / 10</td>
-          <td>${row.oral2 || 0} / 10</td>
-          <td>${row.practical1 || 0} / 20</td>
-          <td>${row.practical2 || 0} / 20</td>
-          <td>${row.project || 0} / 20</td>
-          <td>${row.exam || 0} / 20</td>
-          <td>${row.total || 0}</td>
-        `;
+        let rowHTML = '';
+        
+        if (columnHeaders && columnHeaders.length > 0) {
+          rowHTML = columnHeaders.map(header => `<td>${row[header] || ''}</td>`).join('');
+        } else {
+          rowHTML = `
+            <td>${row.name || ''}</td>
+            <td>${row.oral1 || 0} / 10</td>
+            <td>${row.oral2 || 0} / 10</td>
+            <td>${row.practical1 || 0} / 20</td>
+            <td>${row.practical2 || 0} / 20</td>
+            <td>${row.project || 0} / 20</td>
+            <td>${row.exam || 0} / 20</td>
+            <td>${row.total || 0}</td>
+          `;
+        }
+        
+        tr.innerHTML = rowHTML;
         tbody.appendChild(tr);
       });
     }
